@@ -1,5 +1,29 @@
-﻿node_modules/
+node_modules/
 dist/
-.env
 .DS_Store
 *.log
+.vscode
+.idea
+
+# Android构建产物
+android/
+
+# APK文件（可选：如果不想提交到Git）
+# *.apk
+
+# 本地环境配置
+.env
+.env.local
+.env.*.local
+
+# 编辑器配置
+*.swp
+*.swo
+*~
+
+# 系统文件
+Thumbs.db
+
+# 调试文件
+TODO-App-Debug.apk
+TODO-App-Offline.apk
