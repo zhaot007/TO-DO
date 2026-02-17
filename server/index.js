@@ -37,8 +37,8 @@ app.post('/api/login', async (req, res) => {
 // 获取所有任务 (仅未删除的)
 app.get('/api/tasks/:userId', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM tasks WHERE user_id = ? AND is_deleted = FALSE', [req.params.userId]);
-    // 转换 weekdays 从 JSON 字符串到数组 (如果 mysql2 没有自动处理)
+    const [rows] = await pool.query('SELECT * FROM tasks WHERE user_id = ? AND is_deleted = 0', [req.params.userId]);
+    // 转换 weekdays 从 JSON 字符串到数组 (如果驱动没有自动处理)
     const tasks = rows.map(task => ({
       ...task,
       weekdays: typeof task.weekdays === 'string' ? JSON.parse(task.weekdays) : task.weekdays
@@ -52,7 +52,7 @@ app.get('/api/tasks/:userId', async (req, res) => {
 // 获取回收站任务
 app.get('/api/tasks/:userId/deleted', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM tasks WHERE user_id = ? AND is_deleted = TRUE', [req.params.userId]);
+    const [rows] = await pool.query('SELECT * FROM tasks WHERE user_id = ? AND is_deleted = 1', [req.params.userId]);
     const tasks = rows.map(task => ({
       ...task,
       weekdays: typeof task.weekdays === 'string' ? JSON.parse(task.weekdays) : task.weekdays
@@ -94,10 +94,12 @@ app.put('/api/tasks/:id', async (req, res) => {
   
   for (const [key, value] of Object.entries(updates)) {
     if (allowedFields.includes(key)) {
-      fields.push(`\`${key}\` = ?`);
+      fields.push(`"${key}" = ?`);
       // 处理 JSON 字段
       if (key === 'weekdays') {
         values.push(JSON.stringify(value));
+      } else if (key === 'is_deleted') {
+        values.push(value ? 1 : 0);
       } else {
         values.push(value);
       }
@@ -128,7 +130,7 @@ app.put('/api/tasks/:id', async (req, res) => {
 // 逻辑删除任务 (移至回收站)
 app.delete('/api/tasks/:id', async (req, res) => {
   try {
-    await pool.query('UPDATE tasks SET is_deleted = TRUE WHERE id = ?', [req.params.id]);
+    await pool.query('UPDATE tasks SET is_deleted = 1 WHERE id = ?', [req.params.id]);
     res.json({ message: 'Task moved to trash' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -138,7 +140,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
 // 恢复任务
 app.post('/api/tasks/:id/restore', async (req, res) => {
   try {
-    await pool.query('UPDATE tasks SET is_deleted = FALSE WHERE id = ?', [req.params.id]);
+    await pool.query('UPDATE tasks SET is_deleted = 0 WHERE id = ?', [req.params.id]);
     res.json({ message: 'Task restored' });
   } catch (error) {
     res.status(500).json({ error: error.message });

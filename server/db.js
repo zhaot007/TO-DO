@@ -1,58 +1,63 @@
-import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dbPath = path.join(__dirname, 'database.sqlite');
 
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'zhaot',
-  password: process.env.DB_PASSWORD || 'zt060816',
-  database: process.env.DB_NAME || 'todo_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
-
-let pool = mysql.createPool(dbConfig);
+let db;
 
 export async function initDB() {
-  const connection = await pool.getConnection();
-  try {
-    console.log(`Connected to database: ${dbConfig.database}`);
-    
-    // 用户表
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+  db = await open({
+    filename: dbPath,
+    driver: sqlite3.Database
+  });
 
-    // 任务表
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        text TEXT NOT NULL,
-        status ENUM('pending', 'in_progress', 'completed', 'cancelled', 'overdue') DEFAULT 'pending',
-        category ENUM('work', 'study', 'life') DEFAULT 'work',
-        priority ENUM('high', 'medium', 'low') DEFAULT 'medium',
-        type ENUM('today', 'daily', 'weekly') DEFAULT 'today',
-        weekdays JSON,
-        is_deleted BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_completed TIMESTAMP NULL,
-        completed_at TIMESTAMP NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-    console.log('Tables initialized successfully.');
-  } catch (error) {
-    console.error('Error initializing tables:', error);
-  } finally {
-    connection.release();
-  }
+  console.log('Connected to SQLite database.');
+
+  // 创建用户表
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 创建任务表 (SQLite 不支持 ENUM，使用 CHECK 约束)
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      text TEXT NOT NULL,
+      status TEXT CHECK(status IN ('pending', 'in_progress', 'completed', 'cancelled', 'overdue')) DEFAULT 'pending',
+      category TEXT CHECK(category IN ('work', 'study', 'life')) DEFAULT 'work',
+      priority TEXT CHECK(priority IN ('high', 'medium', 'low')) DEFAULT 'medium',
+      type TEXT CHECK(type IN ('today', 'daily', 'weekly')) DEFAULT 'today',
+      weekdays TEXT, -- 存储 JSON 字符串
+      is_deleted BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_completed DATETIME,
+      completed_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  console.log('SQLite tables initialized.');
 }
 
-export default pool;
+export default {
+  // 代理方法以适配原有代码
+  query: async (sql, params = []) => {
+    const normalizedSql = sql.trim().toUpperCase();
+    if (normalizedSql.startsWith('SELECT')) {
+      const rows = await db.all(sql, params);
+      return [rows];
+    } else {
+      const result = await db.run(sql, params);
+      // 适配 mysql2 的 result.insertId
+      return [{ insertId: result.lastID, affectedRows: result.changes }];
+    }
+  }
+};
