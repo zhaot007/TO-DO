@@ -1,6 +1,6 @@
 # Android APK 打包流程文档 | APK Build Process
 
-**文档版本**: v1.0  
+**文档版本**: v1.1  
 **创建日期**: 2026-02-17  
 **适用项目**: TO-DO App (Vue 3 + Capacitor)  
 **验证状态**: ✅ 已验证成功

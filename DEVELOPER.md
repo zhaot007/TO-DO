@@ -272,33 +272,49 @@ const handleLogin = async () => {
 
 **功能**：
 - 任务列表展示
-- 添加任务
+- 添加任务（内联表单，默认展开）
 - 编辑任务
 - 删除任务
-- 筛选任务
+- 交互式筛选（点击统计数据筛选）
 - 回收站管理
 - 数据统计
 
-**关键组件**：
+**UI布局（v1.1融合式设计）**：
 ```vue
 <template>
-  <!-- 数据统计仪表盘 -->
-  <section class="dashboard-area">
-    <div class="progress-value">{{ completionPercentage }}%</div>
-    <div class="stat-count">{{ pendingCount }}</div>
+  <!-- 统计+筛选+添加 - 融合区域 -->
+  <section class="fusion-area">
+    <!-- 第一行：统计数据（可点击筛选） + 添加按钮 -->
+    <div class="stats-row">
+      <div class="progress-ring" @click="filterByStatus('all')">50%</div>
+      <div class="stat-item" @click="filterByStatus('pending')">1待办</div>
+      <div class="stat-item" @click="filterByStatus('completed')">1已完成</div>
+      <div class="stat-item" @click="filterByStatus('overdue')">0已逾期</div>
+      <button @click="toggleAddForm">添加/收起</button>
+    </div>
+    
+    <!-- 第二行：分类和时间筛选 -->
+    <div class="filter-row">
+      <div class="category-pills">
+        <span @click="filterByCategory('all')">全部</span>
+        <span @click="filterByCategory('work')">工作</span>
+        <span @click="filterByCategory('study')">学习</span>
+        <span @click="filterByCategory('life')">生活</span>
+      </div>
+      <input type="date" v-model="dateRangeStart" />
+      <input type="date" v-model="dateRangeEnd" />
+    </div>
+    
+    <!-- 添加表单（默认展开） -->
+    <div v-if="showAddForm" class="add-form-inline">
+      <input v-model="newTaskText" placeholder="任务名称" />
+      <select v-model="newTaskType">...</select>
+      <select v-model="newTaskCategory">...</select>
+      <select v-model="newTaskPriority">...</select>
+      <button @click="addTask">✓</button>
+      <button @click="clearForm">×</button>
+    </div>
   </section>
-  
-  <!-- 筛选工具栏 -->
-  <section class="filter-toolbar">
-    <select v-model="currentFilter">...</select>
-    <select v-model="currentCategoryFilter">...</select>
-  </section>
-  
-  <!-- 任务输入 -->
-  <div class="task-input-section">
-    <input v-model="newTaskText" />
-    <select v-model="newTaskType">...</select>
-  </div>
   
   <!-- 任务列表 -->
   <ul>
@@ -310,6 +326,13 @@ const handleLogin = async () => {
   </ul>
 </template>
 ```
+
+**关键特性**：
+- 统计数据本身是筛选按钮（点击即筛选）
+- 分类筛选使用胶囊按钮样式
+- 添加表单内联显示，默认展开
+- 移除了独立的筛选工具栏区域
+- 空间优化：节省约130px垂直空间
 
 ---
 

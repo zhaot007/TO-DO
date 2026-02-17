@@ -1,7 +1,7 @@
 {
   "name": "todo-app",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Android离线待办事项管理应用 - 基于Vue 3和Capacitor",
   "author": "开发团队",
