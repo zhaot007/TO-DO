@@ -13,28 +13,50 @@
         </div>
       </header>
 
-      <!-- 数据概览与添加按钮 - 一体化 -->
+      <!-- 统计+筛选+添加 - 融合区域 -->
       <section class="dashboard-area">
+        <!-- 第一行：统计数据（可点击筛选） + 添加按钮 -->
         <div class="stats-all-in-one">
-          <div class="progress-ring-mini">
+          <div class="progress-ring-mini" @click="currentFilter = 'all'" :class="{ active: currentFilter === 'all' }">
             <div class="progress-value-mini">{{ completionPercentage }}%</div>
           </div>
-          <div class="stat-item-inline">
+          <div class="stat-item-inline clickable" @click="currentFilter = 'pending'" :class="{ active: currentFilter === 'pending' }">
             <span class="stat-count-mini">{{ pendingCount }}</span>
             <span class="stat-label-mini">待办</span>
           </div>
-          <div class="stat-item-inline">
+          <div class="stat-item-inline clickable" @click="currentFilter = 'completed'" :class="{ active: currentFilter === 'completed' }">
             <span class="stat-count-mini success">{{ completedCount }}</span>
             <span class="stat-label-mini">已完成</span>
           </div>
-          <div class="stat-item-inline">
+          <div class="stat-item-inline clickable" @click="currentFilter = 'overdue'" :class="{ active: currentFilter === 'overdue' }">
             <span class="stat-count-mini danger">{{ overdueCount }}</span>
             <span class="stat-label-mini">已逾期</span>
           </div>
           <button class="add-btn-text" @click="showAddForm = !showAddForm">{{ showAddForm ? '收起' : '添加' }}</button>
         </div>
 
-        <!-- 添加任务表单 - 折叠式 -->
+        <!-- 第二行：分类和时间筛选 -->
+        <div class="filter-row">
+          <div class="category-filters">
+            <button 
+              v-for="cat in categories" 
+              :key="cat.value"
+              class="category-btn"
+              :class="{ active: currentCategoryFilter === cat.value }"
+              @click="currentCategoryFilter = cat.value"
+            >
+              {{ cat.label }}
+            </button>
+          </div>
+          <div class="time-filter-compact">
+            <input type="datetime-local" v-model="startDate" step="3600" class="mini-date" title="开始">
+            <span class="range-sep">-</span>
+            <input type="datetime-local" v-model="endDate" step="3600" class="mini-date" title="结束">
+            <button v-if="startDate || endDate" class="clear-icon" @click="clearDateFilter">×</button>
+          </div>
+        </div>
+
+        <!-- 添加任务表单 -->
         <div v-if="showAddForm" class="add-form-inline">
           <input 
             type="text" 
@@ -72,35 +94,6 @@
           </label>
         </div>
       </section>
-
-      <!-- 筛选工具栏 -->
-      <div class="interaction-area">
-        <section class="filter-toolbar">
-          <div class="filter-item">
-            <select v-model="currentFilter" class="mobile-select">
-              <option v-for="f in filters" :key="f.value" :value="f.value">{{ f.label }}</option>
-            </select>
-          </div>
-
-          <div class="filter-item">
-            <select v-model="currentCategoryFilter" class="mobile-select">
-              <option value="all">全部分类</option>
-              <option value="work">工作</option>
-              <option value="study">学习</option>
-              <option value="life">生活</option>
-            </select>
-          </div>
-
-          <div class="filter-item">
-            <div class="mobile-time-range">
-              <input type="datetime-local" v-model="startDate" step="3600" class="mini-date" title="开始时间">
-              <span class="range-sep">-</span>
-              <input type="datetime-local" v-model="endDate" step="3600" class="mini-date" title="结束时间">
-              <button v-if="startDate || endDate" class="clear-icon" @click="clearDateFilter">×</button>
-            </div>
-          </div>
-        </section>
-      </div>
 
     <!-- 任务列表 -->
     <div class="task-list">
@@ -245,7 +238,16 @@ const showAddForm = ref(true)
 const filters = [
   { label: '全部任务', value: 'all' },
   { label: '未完成', value: 'pending' },
-  { label: '已完成', value: 'completed' }
+  { label: '已完成', value: 'completed' },
+  { label: '已逾期', value: 'overdue' }
+]
+
+// 分类选项
+const categories = [
+  { label: '全部', value: 'all' },
+  { label: '工作', value: 'work' },
+  { label: '学习', value: 'study' },
+  { label: '生活', value: 'life' }
 ]
 
 // 星期几选项
@@ -495,11 +497,80 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.8rem;
   justify-content: space-between;
+  margin-bottom: 0.8rem;
 }
 
 .stat-item-inline {
   display: flex;
   align-items: center;
+  gap: 0.3rem;
+}
+
+.stat-item-inline.clickable,
+.progress-ring-mini {
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+}
+
+.stat-item-inline.clickable:hover,
+.progress-ring-mini:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.stat-item-inline.active,
+.progress-ring-mini.active {
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 第二行：分类和时间筛选 */
+.filter-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.category-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.category-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.category-btn.active {
+  background: white;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.time-filter-compact {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  padding: 0.3rem 0.6rem;
   gap: 0.3rem;
 }
 
@@ -535,6 +606,7 @@ onUnmounted(() => {
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
+  padding: 0;
 }
 
 .progress-value-mini {
@@ -580,11 +652,7 @@ onUnmounted(() => {
 }
 
 .interaction-area {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 0.8rem;
-  margin-bottom: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: none;
 }
 
 .filter-toolbar {
