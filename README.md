@@ -1,9 +1,43 @@
-# TO-DO App (Full-Stack)
+# TO-DO App (Full-Stack) | 全栈待办事项管理系统
+
+[English](#english) | [中文](#中文)
+
+---
+
+<a name="english"></a>
+## English Description
+
+This is a full-stack To-Do management system built with **Vue 3** and **Node.js (Express)**. It features persistent storage using **MySQL** and a logical delete (Recycle Bin) mechanism.
+
+### 🌟 Key Features
+- **User Management**: Simple username-based login/registration with user-isolated tasks.
+- **Task Management**:
+  - Category support (Work, Study, Life).
+  - Priority levels (High, Medium, Low).
+  - Recurrence types: Today, Daily, and custom Weekly cycles.
+- **Persistent Storage**: All task data is stored in a MySQL database.
+- **Soft Delete (Recycle Bin)**: 
+  - Deleted tasks are moved to the trash first.
+  - Supports restoring or permanent deletion from the trash.
+- **Dynamic UI**: Real-time countdown for today's tasks and a beautiful gradient interface.
+
+### 🛠️ Tech Stack
+- **Frontend**: Vue 3 (Composition API), Pinia, Vue Router, Element Plus, Axios.
+- **Backend**: Node.js, Express, MySQL 8.0, dotenv.
+
+### 🚀 Quick Start
+1. **Database**: Ensure MySQL is running with a database named `todo_db`.
+2. **Backend**: `cd server && npm install && npm start`
+3. **Frontend**: `npm install && npm run dev`
+
+---
+
+<a name="中文"></a>
+## 中文说明
 
 这是一个基于 **Vue 3** 和 **Node.js (Express)** 构建的全栈待办事项管理系统。项目实现了数据持久化存储至 **MySQL** 数据库，并具备逻辑删除（回收站）功能。
 
-## 🌟 核心功能
-
+### 🌟 核心功能
 - **用户管理**: 简单的用户名登录/注册，任务按用户隔离。
 - **任务管理**:
   - 支持任务分类（工作、学习、生活）。
@@ -15,49 +49,19 @@
   - 支持从回收站中一键恢复或彻底删除任务。
 - **动态 UI**: 实时倒计时显示（针对今日任务），美观的渐变色交互界面。
 
-## 🛠️ 技术栈
+### 🛠️ 技术栈
+- **前端**: Vue 3 (Composition API), Pinia, Vue Router, Element Plus, Axios.
+- **后端**: Node.js, Express, MySQL 8.0, dotenv.
 
-### 前端 (Frontend)
-- **Vue 3**: 组合式 API (Setup)。
-- **Pinia**: 状态管理。
-- **Vue Router**: 路由导航控制。
-- **Element Plus**: 部分 UI 组件。
-- **Axios**: 与后端 API 通信。
+### 🚀 快速启动
+1. **数据库准备**: 确保 MySQL 正在运行，并创建了名为 `todo_db` 的数据库。
+2. **后端启动**: `cd server && npm install && npm start`
+3. **前端启动**: `npm install && npm run dev`
 
-### 后端 (Backend)
-- **Node.js + Express**: RESTful API 服务。
-- **MySQL 8.0**: 数据持久化。
-- **dotenv**: 环境参数配置。
+## 📂 Project Structure | 项目结构
+- `/src`: Frontend source code | 前端源码
+- `/server`: Backend source code & DB config | 后端源码与数据库配置
+- `/dist`: Compiled static assets | 编译产物
 
-## 🚀 快速启动
-
-### 1. 数据库准备
-确保您的 MySQL 实例正在运行，并创建了对应的用户：
-- 默认数据库: `todo_db`
-- 默认用户: `zhaot`
-- 默认密码: `zt060816`
-
-### 2. 后端启动
-```bash
-cd server
-npm install
-npm start
-```
-或者在根目录下运行：
-```bash
-npm run backend
-```
-
-### 3. 前端启动
-```bash
-npm install
-npm run dev
-```
-
-## 📂 项目结构
-- `/src`: 前端 Vue 源码。
-- `/server`: 后端 Express 源码及数据库配置。
-- `/dist`: 编译后的静态资源。
-
-## 📄 开源协议
+## 📄 License | 授权协议
 MIT License
