@@ -13,50 +13,6 @@
           </p>
         </div>
       </div>
-
-      <div class="glass-card card-padding">
-        <h3 class="card-title">🔍 状态筛选</h3>
-        <div class="filter-group" style="display: flex; flex-direction: column; gap: 0.8rem;">
-          <button 
-            v-for="filter in filters" 
-            :key="filter.value"
-            class="filter-btn" 
-            :class="{ active: currentFilter === filter.value }"
-            @click="setFilter(filter.value)"
-          >
-            {{ filter.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="glass-card card-padding">
-        <div style="margin-bottom: 1.5rem;">
-          <h3 class="card-title">📁 分类选择</h3>
-          <select v-model="currentCategoryFilter" class="select" style="width: 100%;" @change="filterTasks">
-            <option value="all">全部分类</option>
-            <option value="work">工作</option>
-            <option value="study">学习</option>
-            <option value="life">生活</option>
-          </select>
-        </div>
-
-        <div class="time-filter-section">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-            <h3 class="card-title" style="margin-bottom: 0;">📅 时间筛选</h3>
-            <button v-if="startDate || endDate" class="btn-text" @click="clearDateFilter">清除</button>
-          </div>
-          <div class="date-filter-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <div class="date-input-item">
-              <label style="font-size: 0.8rem; color: var(--text-light);">从:</label>
-              <input type="datetime-local" v-model="startDate" step="3600" class="input" style="padding: 0.4rem; font-size: 0.85rem;">
-            </div>
-            <div class="date-input-item">
-              <label style="font-size: 0.8rem; color: var(--text-light);">至:</label>
-              <input type="datetime-local" v-model="endDate" step="3600" class="input" style="padding: 0.4rem; font-size: 0.85rem;">
-            </div>
-          </div>
-        </div>
-      </div>
     </aside>
 
     <!-- 中间核心任务列表 -->
@@ -72,8 +28,37 @@
         </div>
       </header>
 
-      <!-- 任务添加区域 -->
-      <div class="task-input-section">
+      <!-- 筛选与添加区域容器 -->
+      <div class="interaction-area">
+        <!-- 移动端 App 风格的单行筛选工具栏 -->
+        <section class="filter-toolbar">
+          <div class="filter-item">
+            <select v-model="currentFilter" class="mobile-select">
+              <option v-for="f in filters" :key="f.value" :value="f.value">{{ f.label }}</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <select v-model="currentCategoryFilter" class="mobile-select">
+              <option value="all">全部分类</option>
+              <option value="work">工作</option>
+              <option value="study">学习</option>
+              <option value="life">生活</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <div class="mobile-time-range">
+              <input type="datetime-local" v-model="startDate" step="3600" class="mini-date" title="开始时间">
+              <span class="range-sep">-</span>
+              <input type="datetime-local" v-model="endDate" step="3600" class="mini-date" title="结束时间">
+              <button v-if="startDate || endDate" class="clear-icon" @click="clearDateFilter">×</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 任务添加区域 -->
+        <div class="task-input-section">
         <div class="input-row">
           <input 
             type="text" 
@@ -115,9 +100,10 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 任务列表 -->
-      <div class="task-list">
+    <!-- 任务列表 -->
+    <div class="task-list">
         <ul v-if="filteredTasks.length > 0">
           <li 
             v-for="task in filteredTasks" 
@@ -471,6 +457,106 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.interaction-area {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.interaction-area {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.filter-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0 0 1rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+.filter-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-select {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.mobile-select:focus {
+  outline: none;
+  background: white;
+  border-color: var(--primary-color);
+}
+
+.mobile-time-range {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  gap: 0.3rem;
+}
+
+.mini-date {
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  color: var(--text-dark);
+  width: 135px;
+  outline: none;
+}
+
+.range-sep {
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+
+.clear-icon {
+  background: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 0.3rem;
+  transition: transform 0.2s;
+}
+
+.clear-icon:hover {
+  transform: scale(1.1);
+}
+
+.task-input-section {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .btn-text {
   background: none;
   border: none;
