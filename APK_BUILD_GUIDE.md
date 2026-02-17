@@ -329,17 +329,25 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# 步骤1: 检查Java版本
-echo -e "${YELLOW}📋 步骤1: 检查Java版本...${NC}"
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2)
+# 步骤1: 检查并设置Java版本
+echo -e "${YELLOW}📋 步骤1: 检查并设置Java版本...${NC}"
+export JAVA_HOME=$(/usr/libexec/java_home -v 17 2>/dev/null || echo "")
+
+if [ -z "$JAVA_HOME" ]; then
+    echo -e "${RED}❌ 错误: 未找到Java 17，请先安装${NC}"
+    exit 1
+fi
+
+export PATH="$JAVA_HOME/bin:$PATH"
+JAVA_VERSION=$($JAVA_HOME/bin/java -version 2>&1 | head -1 | cut -d'"' -f2)
 echo "Java版本: $JAVA_VERSION"
+echo "JAVA_HOME: $JAVA_HOME"
 
 if [[ ! $JAVA_VERSION == 17.* ]]; then
     echo -e "${RED}❌ 错误: 需要Java 17，当前版本: $JAVA_VERSION${NC}"
     exit 1
 fi
-echo -e "${GREEN}✅ Java版本检查通过${NC}"
+echo -e "${GREEN}✅ Java 17 配置成功${NC}"
 echo ""
 
 # 步骤2: 清理旧构建
@@ -408,6 +416,14 @@ echo "1. 将APK传输到Android设备"
 echo "2. 开启'允许安装未知来源应用'"
 echo "3. 点击APK文件安装"
 ```
+
+**脚本特性**：
+- ✅ 自动检测并设置Java 17
+- ✅ 自动设置JAVA_HOME和PATH环境变量
+- ✅ 自动修复4个gradle文件的Java版本配置
+- ✅ 彩色输出，清晰提示每个步骤
+- ✅ 错误自动退出，避免继续执行
+- ✅ 显示JAVA_HOME路径，便于调试
 
 **使用方法**：
 ```bash
