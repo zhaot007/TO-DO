@@ -298,6 +298,16 @@
             </div>
           </div>
 
+          <!-- 数据导出 -->
+          <div class="export-section">
+            <h4 class="export-title">📊 数据导出</h4>
+            <p class="export-desc">导出您的所有任务数据为Excel文件，随时备份您的信息</p>
+            <button class="btn btn-export" @click="exportToExcel">
+              <span class="export-icon">📥</span>
+              导出任务数据
+            </button>
+          </div>
+
           <!-- 联系与支持 -->
           <div class="support-section">
             <h4 class="support-title">💝 联系与支持</h4>
@@ -366,6 +376,7 @@ import { useRouter } from 'vue-router'
 import { useOfflineTaskStore } from '../stores/offlineTaskStore'
 import { useOfflineUserStore } from '../stores/offlineUserStore'
 import { Preferences } from '@capacitor/preferences'
+import * as XLSX from 'xlsx'
 
 const router = useRouter()
 const taskStore = useOfflineTaskStore()
@@ -703,6 +714,40 @@ const updateProfile = async () => {
   oldPassword.value = ''
   newPassword.value = ''
   showProfile.value = false
+}
+
+// 方法：导出任务到Excel
+const exportToExcel = () => {
+  const tasks = taskStore.tasks
+  
+  if (tasks.length === 0) {
+    alert('暂无任务数据可导出')
+    return
+  }
+  
+  // 准备导出数据
+  const exportData = tasks.map(task => ({
+    '任务名称': task.text,
+    '详细描述': task.description || '',
+    '分类': getCategoryText(task.category),
+    '优先级': getPriorityText(task.priority),
+    '类型': getTaskTypeText(task),
+    '状态': task.status === 'completed' ? '已完成' : task.status === 'overdue' ? '已逾期' : '待办',
+    '创建时间': formatDate(task.created_at)
+  }))
+  
+  // 创建工作簿
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '我的任务')
+  
+  // 生成文件名
+  const filename = `TODO任务_${currentUsername.value}_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`
+  
+  // 导出文件
+  XLSX.writeFile(wb, filename)
+  
+  showNotification('任务数据导出成功！', 'success')
 }
 
 // 方法：获取任务类型文本
@@ -1519,6 +1564,58 @@ onUnmounted(() => {
 }
 
 /* 支持与联系区域 */
+/* 数据导出区域 */
+.export-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-radius: 12px;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  text-align: center;
+}
+
+.export-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+}
+
+.export-desc {
+  margin: 0 0 1rem 0;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+.btn-export {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-export:active {
+  transform: translateY(0);
+}
+
+.export-icon {
+  font-size: 1.2rem;
+}
+
+/* 支持与联系区域 */
 .support-section {
   margin-top: 1.5rem;
   padding: 1rem;
@@ -1737,7 +1834,7 @@ onUnmounted(() => {
 /* 内联添加表单 */
 .add-form-inline {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.3rem;
   margin-top: 0.8rem;
   padding-top: 0.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.3);
@@ -1747,8 +1844,8 @@ onUnmounted(() => {
 
 .input-inline {
   flex: 1;
-  min-width: 120px;
-  padding: 0.5rem;
+  min-width: 100px;
+  padding: 0.4rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.6);
@@ -1762,7 +1859,7 @@ onUnmounted(() => {
 }
 
 .select-inline {
-  padding: 0.5rem;
+  padding: 0.4rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.6);
@@ -1777,8 +1874,8 @@ onUnmounted(() => {
 }
 
 .btn-inline {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: none;
   font-size: 1.2rem;
@@ -1787,6 +1884,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .btn-add {
