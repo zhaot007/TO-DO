@@ -902,20 +902,22 @@ onUnmounted(() => {
 .stats-all-in-one {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.4rem;
   justify-content: space-between;
   margin-bottom: 0.8rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* v1.2: 统计数据横向紧凑排列 */
 .stat-row {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.5rem;
+  gap: 0.2rem;
+  padding: 0.25rem 0.4rem;
   border-radius: 8px;
   transition: all 0.3s;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .stat-row.clickable {
@@ -933,50 +935,56 @@ onUnmounted(() => {
 }
 
 .stat-icon {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   flex-shrink: 0;
 }
 
 .stat-count-mini {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-dark);
-  min-width: 20px;
+  min-width: 18px;
 }
 
 .stat-count-mini.success { color: var(--success-color); }
 .stat-count-mini.danger { color: var(--error-color); }
 
 .stat-label-mini {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-light);
+  white-space: nowrap;
 }
 
 /* 第二行：分类和时间筛选 */
 .filter-row {
   display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
 }
 
 .category-filters {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex: 1;
+  width: 100%;
 }
 
 .category-btn {
-  padding: 0.4rem 0.8rem;
-  border-radius: 16px;
+  flex: 1;
+  padding: 0.5rem 0.8rem;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.3);
   color: var(--text-dark);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s;
   white-space: nowrap;
+  flex-shrink: 0;
+  text-align: center;
+  min-width: 0;
 }
 
 .category-btn:hover {
@@ -996,10 +1004,13 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 20px;
-  padding: 0.4rem 0.8rem;
-  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  gap: 0.4rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
+  flex-wrap: nowrap;
+  justify-content: center;
+  max-width: 100%;
 }
 
 .time-filter-compact:hover {
@@ -1013,10 +1024,12 @@ onUnmounted(() => {
   align-items: center;
   background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
-  padding: 0.3rem 0.6rem;
+  padding: 0.35rem 0.5rem;
   cursor: pointer;
   transition: all 0.3s;
-  min-width: 120px;
+  min-width: 100px;
+  flex: 1;
+  max-width: 130px;
 }
 
 .date-input-wrapper:hover {
@@ -1045,17 +1058,19 @@ onUnmounted(() => {
 }
 
 .calendar-icon {
-  font-size: 1rem;
-  margin-left: 0.3rem;
+  font-size: 0.9rem;
+  margin-left: 0.25rem;
   pointer-events: none;
   opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .range-sep {
   color: var(--text-light);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  padding: 0 0.2rem;
+  padding: 0 0.1rem;
+  flex-shrink: 0;
 }
 
 .clear-icon {
@@ -1063,13 +1078,13 @@ onUnmounted(() => {
   color: white;
   border: none;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: bold;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -1217,13 +1232,13 @@ onUnmounted(() => {
   color: white;
   border: none;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: bold;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -1266,7 +1281,7 @@ onUnmounted(() => {
 }
 
 .task-time {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-light);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
@@ -1651,7 +1666,7 @@ onUnmounted(() => {
 
 .support-desc {
   margin: 0 0 1rem 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-light);
   text-align: center;
   line-height: 1.3;
@@ -1687,7 +1702,7 @@ onUnmounted(() => {
 
 .qr-label {
   margin: 0.3rem 0 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-dark);
   font-weight: 600;
 }
@@ -1856,18 +1871,21 @@ onUnmounted(() => {
   margin-top: 0.8rem;
   padding-top: 0.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.3);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-inline {
-  flex: 1;
-  min-width: 100px;
+  flex: 1.2;
+  min-width: 0;
   padding: 0.4rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
+  box-sizing: border-box;
 }
 
 .input-inline:focus {
@@ -1877,12 +1895,15 @@ onUnmounted(() => {
 }
 
 .select-inline {
-  padding: 0.4rem 0.5rem;
+  padding: 0.4rem 0.3rem;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-shrink: 1;
 }
 
 .select-inline:focus {
@@ -1892,17 +1913,18 @@ onUnmounted(() => {
 }
 
 .btn-inline {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .btn-add {
