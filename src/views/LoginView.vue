@@ -72,8 +72,19 @@ const handleRegister = async () => {
     return
   }
   
+  // 保存用户密码
   users[username.value] = password.value
   await Preferences.set({ key: 'users', value: JSON.stringify(users) })
+  
+  // 保存用户详细信息
+  const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+  const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+  userInfo[username.value] = {
+    username: username.value,
+    registerTime: new Date().toISOString(),
+    lastLoginTime: new Date().toISOString()
+  }
+  await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
   
   emit('notify', { message: '注册成功！', type: 'success' })
   isRegister.value = false
@@ -85,6 +96,15 @@ const handleLogin = async () => {
   
   if (users[username.value] === password.value) {
     await Preferences.set({ key: 'currentUser', value: username.value })
+    
+    // 更新最后登录时间
+    const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+    const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+    if (userInfo[username.value]) {
+      userInfo[username.value].lastLoginTime = new Date().toISOString()
+      await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
+    }
+    
     emit('notify', { message: '登录成功！', type: 'success' })
     setTimeout(() => {
       window.location.hash = '#/todo'

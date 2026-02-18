@@ -10,6 +10,7 @@
         <div class="header-actions">
           <button class="btn btn-info" @click="showTrash = true">回收站 ({{ taskStore.deletedTasks.length }})</button>
           <button class="btn btn-danger" @click="handleLogout">退出登录</button>
+          <button class="btn-icon" @click="showProfile = true" title="个人主页">👤</button>
         </div>
       </header>
 
@@ -219,6 +220,109 @@
       </div>
     </div>
 
+    <!-- 个人主页弹窗 -->
+    <div v-if="showProfile" class="modal-overlay" @click.self="showProfile = false">
+      <div class="modal-content glass-card" style="background: white; max-width: 500px;">
+        <div class="modal-header">
+          <h3>个人主页</h3>
+          <button class="close-btn" @click="showProfile = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- 用户信息展示 -->
+          <div class="profile-section">
+            <div class="profile-avatar">
+              <div class="avatar-circle">{{ currentUsername ? currentUsername.charAt(0).toUpperCase() : 'U' }}</div>
+            </div>
+            <div class="profile-info">
+              <h2>{{ currentUsername }}</h2>
+              <div class="profile-details">
+                <p class="profile-meta">📅 注册时间：{{ formatDate(userProfileInfo.registerTime) }}</p>
+                <p class="profile-meta">🕐 最后登录：{{ formatDate(userProfileInfo.lastLoginTime) }}</p>
+                <p class="profile-meta">📊 使用天数：{{ usageDays }}天</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 统计信息 -->
+          <div class="profile-stats">
+            <div class="stat-item">
+              <div class="stat-value">{{ taskStore.tasks.length }}</div>
+              <div class="stat-label">总任务</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ completedCount }}</div>
+              <div class="stat-label">已完成</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ pendingCount }}</div>
+              <div class="stat-label">待完成</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ completionRate }}%</div>
+              <div class="stat-label">完成率</div>
+            </div>
+          </div>
+
+          <!-- 修改用户名 -->
+          <div class="profile-form">
+            <div class="form-group">
+              <label>修改用户名</label>
+              <input 
+                v-model="newUsername" 
+                class="input" 
+                placeholder="输入新用户名"
+              >
+            </div>
+
+            <!-- 修改密码 -->
+            <div class="form-group">
+              <label>修改密码</label>
+              <input 
+                v-model="oldPassword" 
+                type="password" 
+                class="input" 
+                placeholder="输入当前密码"
+              >
+              <input 
+                v-model="newPassword" 
+                type="password" 
+                class="input" 
+                placeholder="输入新密码"
+                style="margin-top: 0.5rem;"
+              >
+            </div>
+
+            <div class="modal-actions">
+              <button class="btn btn-secondary" @click="showProfile = false">取消</button>
+              <button class="btn btn-primary" @click="updateProfile">保存修改</button>
+            </div>
+          </div>
+
+          <!-- 联系与支持 -->
+          <div class="support-section">
+            <h4 class="support-title">💝 联系与支持</h4>
+            <p class="support-desc">遇到bug别慌，扫码找我唠唠；用得爽了，请我喝杯奶茶呗 ☕</p>
+            
+            <div class="qr-codes">
+              <div class="qr-item">
+                <img src="../assets/images/wechat-qr.png" alt="微信二维码" class="qr-image">
+                <p class="qr-label">💬 添加微信</p>
+              </div>
+              <div class="qr-item">
+                <img src="../assets/images/payment-qr.png" alt="打赏二维码" class="qr-image">
+                <p class="qr-label">💰 打赏支持</p>
+              </div>
+            </div>
+
+            <div class="contact-info">
+              <span class="contact-icon">📞</span>
+              <span class="contact-text">联系电话：17858441076</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 任务详情编辑模态框 -->
     <div v-if="editingTask" class="modal-overlay" @click.self="editingTask = null">
       <div class="modal-content glass-card" style="background: white;">
@@ -261,6 +365,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOfflineTaskStore } from '../stores/offlineTaskStore'
 import { useOfflineUserStore } from '../stores/offlineUserStore'
+import { Preferences } from '@capacitor/preferences'
 
 const router = useRouter()
 const taskStore = useOfflineTaskStore()
@@ -287,12 +392,22 @@ const startDate = ref('')
 const endDate = ref('')
 const countdownInterval = ref(null)
 const showTrash = ref(false)
+const showProfile = ref(false)
 const editingTask = ref(null)
 const editDescription = ref('')
 const editText = ref('')
 const showAddForm = ref(true)
 const currentPage = ref(1)
 const pageSize = 6
+
+// 个人主页相关
+const newUsername = ref('')
+const oldPassword = ref('')
+const newPassword = ref('')
+const userProfileInfo = ref({
+  registerTime: null,
+  lastLoginTime: null
+})
 
 // 获取当前用户名
 const currentUsername = computed(() => userStore.currentUser)
@@ -336,6 +451,22 @@ const completionPercentage = computed(() => {
 const pendingCount = computed(() => taskStore.tasks.filter(t => t.status !== TaskStatus.COMPLETED).length)
 const completedCount = computed(() => taskStore.tasks.filter(t => t.status === TaskStatus.COMPLETED).length)
 const overdueCount = computed(() => taskStore.tasks.filter(t => t.status === TaskStatus.OVERDUE).length)
+
+// 个人主页统计
+const completionRate = computed(() => {
+  const total = taskStore.tasks.length
+  if (total === 0) return 0
+  return Math.round((completedCount.value / total) * 100)
+})
+
+const usageDays = computed(() => {
+  if (!userProfileInfo.value.registerTime) return 0
+  const registerDate = new Date(userProfileInfo.value.registerTime)
+  const today = new Date()
+  const diffTime = Math.abs(today - registerDate)
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays
+})
 
 // 计算属性：筛选后的任务
 const filteredTasks = computed(() => {
@@ -472,6 +603,99 @@ const handleLogout = () => {
   router.push('/')
 }
 
+// 方法：加载用户信息
+const loadUserInfo = async () => {
+  const username = currentUsername.value
+  if (!username) return
+  
+  const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+  const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+  
+  if (userInfo[username]) {
+    userProfileInfo.value = userInfo[username]
+  } else {
+    // 如果是老用户没有信息，创建默认信息
+    userProfileInfo.value = {
+      username: username,
+      registerTime: new Date().toISOString(),
+      lastLoginTime: new Date().toISOString()
+    }
+    userInfo[username] = userProfileInfo.value
+    await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
+  }
+}
+
+// 方法：格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return '未知'
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 方法：更新个人信息
+const updateProfile = async () => {
+  const username = currentUsername.value
+  
+  // 修改用户名
+  if (newUsername.value && newUsername.value !== username) {
+    // 检查新用户名是否已存在
+    const { value: usersData } = await Preferences.get({ key: 'users' })
+    const users = usersData ? JSON.parse(usersData) : {}
+    
+    if (users[newUsername.value]) {
+      alert('用户名已存在，请选择其他用户名')
+      return
+    }
+    
+    // 更新用户名
+    const password = users[username]
+    delete users[username]
+    users[newUsername.value] = password
+    
+    await Preferences.set({ key: 'users', value: JSON.stringify(users) })
+    await Preferences.set({ key: 'currentUser', value: newUsername.value })
+    
+    // 更新任务的user_id
+    taskStore.tasks.forEach(task => {
+      if (task.user_id === username) {
+        task.user_id = newUsername.value
+      }
+    })
+    await taskStore.saveTasks()
+    
+    userStore.currentUser = newUsername.value
+    alert('用户名修改成功')
+  }
+  
+  // 修改密码
+  if (oldPassword.value && newPassword.value) {
+    const { value: usersData } = await Preferences.get({ key: 'users' })
+    const users = usersData ? JSON.parse(usersData) : {}
+    const currentUser = newUsername.value || username
+    
+    if (users[currentUser] !== oldPassword.value) {
+      alert('当前密码错误')
+      return
+    }
+    
+    users[currentUser] = newPassword.value
+    await Preferences.set({ key: 'users', value: JSON.stringify(users) })
+    alert('密码修改成功')
+  }
+  
+  // 重置表单
+  newUsername.value = ''
+  oldPassword.value = ''
+  newPassword.value = ''
+  showProfile.value = false
+}
+
 // 方法：获取任务类型文本
 const getTaskTypeText = (task) => {
   switch (task.type) {
@@ -560,6 +784,7 @@ const showNotification = (message, type = 'info') => {
 // 生命周期钩子：组件挂载时
 onMounted(async () => {
   await userStore.checkLogin()
+  await loadUserInfo()
   taskStore.loadTasks()
   
   countdownInterval.value = setInterval(() => {
@@ -1151,6 +1376,212 @@ onUnmounted(() => {
 .header-actions {
   display: flex;
   gap: 0.8rem;
+  align-items: center;
+}
+
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  background: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.btn-icon:hover {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border-color: transparent;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* 个人主页样式 */
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.profile-info h2 {
+  margin: 0 0 0.8rem 0;
+  font-size: 1.5rem;
+  color: var(--text-dark);
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.profile-meta {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.profile-form {
+  padding: 0 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 支持与联系区域 */
+.support-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 193, 7, 0.3);
+}
+
+.support-title {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  text-align: center;
+}
+
+.support-desc {
+  margin: 0 0 1rem 0;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qr-codes {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+.qr-item {
+  text-align: center;
+  flex: 1;
+}
+
+.qr-image {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  padding: 4px;
+}
+
+.qr-label {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.contact-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+
+.contact-icon {
+  font-size: 1rem;
+}
+
+.contact-text {
+  font-size: 0.8rem;
+  color: var(--text-dark);
+  font-weight: 600;
 }
 
 /* 模态框样式 */
