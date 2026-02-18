@@ -59,10 +59,33 @@ echo ""
 
 # 步骤5: 修复Java版本配置
 echo -e "${YELLOW}📋 步骤5: 修复Java版本配置...${NC}"
-sed -i '' 's/VERSION_21/VERSION_17/g' android/app/capacitor.build.gradle
-sed -i '' 's/VERSION_21/VERSION_17/g' android/capacitor-cordova-android-plugins/build.gradle
-sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
-sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/preferences/android/build.gradle
+sed -i '' 's/VERSION_21/VERSION_17/g' android/app/capacitor.build.gradle 2>/dev/null || true
+sed -i '' 's/VERSION_21/VERSION_17/g' android/capacitor-cordova-android-plugins/build.gradle 2>/dev/null || true
+sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle 2>/dev/null || true
+sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/preferences/android/build.gradle 2>/dev/null || true
+
+# 修复 filesystem 插件
+if [ -f "node_modules/@capacitor/filesystem/android/build.gradle" ]; then
+  sed -i '' 's/sourceCompatibility JavaVersion.VERSION_21/sourceCompatibility JavaVersion.VERSION_17/' node_modules/@capacitor/filesystem/android/build.gradle
+  sed -i '' 's/targetCompatibility JavaVersion.VERSION_21/targetCompatibility JavaVersion.VERSION_17/' node_modules/@capacitor/filesystem/android/build.gradle
+  sed -i '' 's/jvmToolchain(21)/jvmToolchain(17)/' node_modules/@capacitor/filesystem/android/build.gradle
+fi
+
+# 应用自定义图标
+if [ -f "icon-cropped.png" ]; then
+  echo "应用自定义图标..."
+  sips -z 48 48 icon-cropped.png --out android/app/src/main/res/mipmap-mdpi/ic_launcher.png > /dev/null 2>&1
+  sips -z 72 72 icon-cropped.png --out android/app/src/main/res/mipmap-hdpi/ic_launcher.png > /dev/null 2>&1
+  sips -z 96 96 icon-cropped.png --out android/app/src/main/res/mipmap-xhdpi/ic_launcher.png > /dev/null 2>&1
+  sips -z 144 144 icon-cropped.png --out android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png > /dev/null 2>&1
+  sips -z 192 192 icon-cropped.png --out android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png > /dev/null 2>&1
+  sips -z 48 48 icon-cropped.png --out android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png > /dev/null 2>&1
+  sips -z 72 72 icon-cropped.png --out android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png > /dev/null 2>&1
+  sips -z 96 96 icon-cropped.png --out android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png > /dev/null 2>&1
+  sips -z 144 144 icon-cropped.png --out android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png > /dev/null 2>&1
+  sips -z 192 192 icon-cropped.png --out android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png > /dev/null 2>&1
+fi
+
 echo -e "${GREEN}✅ 配置修复完成${NC}"
 echo ""
 

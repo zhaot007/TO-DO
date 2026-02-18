@@ -376,6 +376,7 @@ import { useRouter } from 'vue-router'
 import { useOfflineTaskStore } from '../stores/offlineTaskStore'
 import { useOfflineUserStore } from '../stores/offlineUserStore'
 import { Preferences } from '@capacitor/preferences'
+import { Filesystem, Directory } from '@capacitor/filesystem'
 import * as XLSX from 'xlsx'
 
 const router = useRouter()
@@ -717,7 +718,8 @@ const updateProfile = async () => {
 }
 
 // 方法：导出任务到Excel
-const exportToExcel = () => {
+// 方法：导出任务到Excel
+const exportToExcel = async () => {
   const tasks = taskStore.tasks
   
   if (tasks.length === 0) {
@@ -725,29 +727,41 @@ const exportToExcel = () => {
     return
   }
   
-  // 准备导出数据
-  const exportData = tasks.map(task => ({
-    '任务名称': task.text,
-    '详细描述': task.description || '',
-    '分类': getCategoryText(task.category),
-    '优先级': getPriorityText(task.priority),
-    '类型': getTaskTypeText(task),
-    '状态': task.status === 'completed' ? '已完成' : task.status === 'overdue' ? '已逾期' : '待办',
-    '创建时间': formatDate(task.created_at)
-  }))
-  
-  // 创建工作簿
-  const ws = XLSX.utils.json_to_sheet(exportData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '我的任务')
-  
-  // 生成文件名
-  const filename = `TODO任务_${currentUsername.value}_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`
-  
-  // 导出文件
-  XLSX.writeFile(wb, filename)
-  
-  showNotification('任务数据导出成功！', 'success')
+  try {
+    // 准备导出数据
+    const exportData = tasks.map(task => ({
+      '任务名称': task.text,
+      '详细描述': task.description || '',
+      '分类': getCategoryText(task.category),
+      '优先级': getPriorityText(task.priority),
+      '类型': getTaskTypeText(task),
+      '状态': task.status === 'completed' ? '已完成' : task.status === 'overdue' ? '已逾期' : '待办',
+      '创建时间': formatDate(task.created_at)
+    }))
+    
+    // 创建工作簿
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '我的任务')
+    
+    // 生成文件名
+    const filename = `TODO任务_${currentUsername.value}_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`
+    
+    // 生成二进制数据
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' })
+    
+    // 保存到Android下载目录
+    await Filesystem.writeFile({
+      path: filename,
+      data: wbout,
+      directory: Directory.Documents
+    })
+    
+    showNotification(`文件已保存到：文档/${filename}`, 'success')
+  } catch (error) {
+    console.error('导出失败:', error)
+    showNotification('导出失败，请重试', 'error')
+  }
 }
 
 // 方法：获取任务类型文本
@@ -862,13 +876,17 @@ onUnmounted(() => {
   justify-content: center;
   padding: 0.5rem;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .main-content {
   width: 100%;
   max-width: 100%;
   flex: none;
-  padding: 1rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
 }
 
 /* v1.2: 统计栏卡片感增强 */

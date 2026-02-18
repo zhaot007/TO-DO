@@ -57,14 +57,19 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  width: 100vw;
+  max-width: 100%;
 }
 
 .app {
   min-height: 100vh;
+  width: 100vw;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
+  overflow-x: hidden;
 }
 
 .bg-decoration {
@@ -80,8 +85,8 @@ body {
 
 .blob {
   position: absolute;
-  width: 500px;
-  height: 500px;
+  width: min(500px, 80vw);
+  height: min(500px, 80vw);
   background: rgba(255, 255, 255, 0.1);
   filter: blur(80px);
   border-radius: 50%;
@@ -105,8 +110,8 @@ body {
 .blob-3 {
   top: 40%;
   left: 30%;
-  width: 300px;
-  height: 300px;
+  width: min(300px, 60vw);
+  height: min(300px, 60vw);
   background: rgba(231, 76, 60, 0.1);
   animation-delay: -10s;
 }
