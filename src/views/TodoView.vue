@@ -10,7 +10,7 @@
         <div class="header-actions">
           <button class="btn btn-info" @click="showTrash = true">回收站 ({{ taskStore.deletedTasks.length }})</button>
           <button class="btn btn-danger" @click="handleLogout">退出登录</button>
-          <button class="btn-icon" @click="showProfile = true" title="个人主页">👤</button>
+          <button class="btn-icon" @click="showProfile = true" title="个人主页">👨‍💼</button>
         </div>
       </header>
 
