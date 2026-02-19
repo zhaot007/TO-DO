@@ -1,32 +1,85 @@
 <template>
   <div class="login-container">
     <div class="glass-card login-box">
-      <h2>{{ isRegister ? '注册账号' : isForgotPassword ? '找回密码' : 'Welcome Back' }}</h2>
-      
-      <div class="input-group">
-        <label for="username">用户名</label>
-        <input 
-          type="text" 
-          id="username" 
-          v-model="username" 
-          class="input"
-          placeholder="请输入用户名"
-          @keyup.enter="handleSubmit"
-        >
+      <!-- 登录模式切换 -->
+      <div class="login-tabs" v-if="!isRegister && !isForgotPassword">
+        <div 
+          class="tab" 
+          :class="{ active: loginMethod === 'username' }" 
+          @click="loginMethod = 'username'"
+        >账号登录</div>
+        <div 
+          class="tab" 
+          :class="{ active: loginMethod === 'phone' }" 
+          @click="loginMethod = 'phone'"
+        >手机登录</div>
       </div>
+
+      <h2>{{ isRegister ? '注册账号' : isForgotPassword ? '找回密码' : (loginMethod === 'username' ? 'Welcome Back' : '短信登录') }}</h2>
       
-      <div class="input-group" v-if="!isForgotPassword">
-        <label for="password">密码</label>
-        <input 
-          type="password" 
-          id="password" 
-          v-model="password" 
-          class="input"
-          placeholder="请输入密码"
-          @keyup.enter="handleSubmit"
-        >
-      </div>
+      <!-- 账号登录/注册模式 -->
+      <template v-if="loginMethod === 'username' || isRegister || isForgotPassword">
+        <div class="input-group">
+          <label for="username">用户名</label>
+          <input 
+            type="text" 
+            id="username" 
+            v-model="username" 
+            class="input"
+            placeholder="请输入用户名"
+            @keyup.enter="handleSubmit"
+          >
+        </div>
+        
+        <div class="input-group" v-if="!isForgotPassword">
+          <label for="password">密码</label>
+          <input 
+            type="password" 
+            id="password" 
+            v-model="password" 
+            class="input"
+            placeholder="请输入密码"
+            @keyup.enter="handleSubmit"
+          >
+        </div>
+      </template>
+
+      <!-- 手机登录模式 -->
+      <template v-else>
+        <div class="input-group">
+          <label for="phone">手机号</label>
+          <input 
+            type="tel" 
+            id="phone" 
+            v-model="phoneNumber" 
+            class="input"
+            placeholder="请输入手机号"
+            maxlength="11"
+          >
+        </div>
+        <div class="input-group code-group">
+          <label for="code">验证码</label>
+          <div class="code-input-wrapper">
+            <input 
+              type="number" 
+              id="code" 
+              v-model="verificationCode" 
+              class="input"
+              placeholder="6位验证码"
+              @keyup.enter="handleSubmit"
+            >
+            <button 
+              class="btn-send-code" 
+              :disabled="countdown > 0" 
+              @click="sendMockSMS"
+            >
+              {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
+            </button>
+          </div>
+        </div>
+      </template>
       
+      <!-- 注册特有字段 -->
       <template v-if="isRegister">
         <div class="input-group">
           <label for="securityQuestion">安全问题（可选）</label>
@@ -54,6 +107,7 @@
         </div>
       </template>
       
+      <!-- 找回密码步骤 -->
       <template v-if="isForgotPassword && forgotStep === 1">
         <div class="input-group">
           <label>安全问题：{{ currentSecurityQuestion }}</label>
@@ -82,7 +136,7 @@
       </template>
       
       <button class="btn btn-primary" @click="handleSubmit">
-        {{ isRegister ? '注册' : isForgotPassword ? (forgotStep === 1 ? '验证' : '重置密码') : '登录' }}
+        {{ isRegister ? '注册' : isForgotPassword ? (forgotStep === 1 ? '验证' : '重置密码') : '进入应用' }}
       </button>
       
       <p class="error-message" v-if="error">{{ error }}</p>
@@ -91,7 +145,7 @@
         {{ isRegister ? '已有账号？去登录' : '没有账号？去注册' }}
       </p>
       
-      <p class="switch-mode" @click="showForgotPassword" v-if="!isRegister && !isForgotPassword">
+      <p class="switch-mode" @click="showForgotPassword" v-if="!isRegister && !isForgotPassword && loginMethod === 'username'">
         忘记密码？
       </p>
       
@@ -103,11 +157,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Preferences } from '@capacitor/preferences'
+import { LocalNotifications } from '@capacitor/local-notifications'
 
 const emit = defineEmits(['notify'])
 
+// 基础状态
 const username = ref('')
 const password = ref('')
 const error = ref('')
@@ -119,11 +175,61 @@ const securityAnswer = ref('')
 const newPassword = ref('')
 const currentSecurityQuestion = ref('')
 
+// 手机登录特有状态
+const loginMethod = ref('username') // 'username' or 'phone'
+const phoneNumber = ref('')
+const verificationCode = ref('')
+const generatedCode = ref('')
+const countdown = ref(0)
+let timer = null
+
 const securityQuestions = {
   pet: '你的第一只宠物叫什么？',
   city: '你出生在哪个城市？',
   school: '你的小学名称是什么？',
   food: '你最喜欢的食物是什么？'
+}
+
+onMounted(async () => {
+  // 请求通知权限
+  await LocalNotifications.requestPermissions()
+})
+
+const sendMockSMS = async () => {
+  if (!/^1[3-9]\d{9}$/.test(phoneNumber.value)) {
+    error.value = '请输入正确的手机号'
+    return
+  }
+
+  // 生成6位随机验证码
+  generatedCode.value = Math.floor(100000 + Math.random() * 900000).toString()
+  
+  // 模拟发送通知（短信弹窗）
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        title: '【TO-DO 验证码】',
+        body: `您的登录验证码为：${generatedCode.value}，请在5分钟内完成验证。`,
+        id: 1,
+        schedule: { at: new Date(Date.now() + 1000) },
+        sound: null,
+        attachments: null,
+        actionTypeId: '',
+        extra: null
+      }
+    ]
+  })
+
+  emit('notify', { message: '验证码已通过系统通知发送', type: 'info' })
+  
+  // 倒计时逻辑
+  countdown.value = 60
+  timer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
 }
 
 const handleSubmit = async () => {
@@ -137,9 +243,50 @@ const handleSubmit = async () => {
     } else {
       await resetPassword()
     }
+  } else if (loginMethod.value === 'phone') {
+    await handlePhoneLogin()
   } else {
     await handleLogin()
   }
+}
+
+const handlePhoneLogin = async () => {
+  if (!phoneNumber.value) {
+    error.value = '请输入手机号'
+    return
+  }
+  if (verificationCode.value !== generatedCode.value || !generatedCode.value) {
+    error.value = '验证码错误或已失效'
+    return
+  }
+
+  // 手机号登录逻辑：如果用户不存在则自动注册
+  const { value } = await Preferences.get({ key: 'users' })
+  const users = value ? JSON.parse(value) : {}
+  
+  const userKey = `phone_${phoneNumber.value}`
+  if (!users[userKey]) {
+    // 自动创建手机用户，密码随机或不设
+    users[userKey] = 'phone_user_no_pwd'
+    await Preferences.set({ key: 'users', value: JSON.stringify(users) })
+    
+    // 初始化用户信息
+    const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+    const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+    userInfo[userKey] = {
+      username: phoneNumber.value,
+      registerTime: new Date().toISOString(),
+      lastLoginTime: new Date().toISOString()
+    }
+    await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
+  }
+
+  // 执行登录
+  await Preferences.set({ key: 'currentUser', value: userKey })
+  emit('notify', { message: '登录成功！', type: 'success' })
+  setTimeout(() => {
+    window.location.hash = '#/todo'
+  }, 300)
 }
 
 const handleRegister = async () => {
@@ -299,6 +446,11 @@ const resetForm = () => {
   securityAnswer.value = ''
   newPassword.value = ''
   error.value = ''
+  phoneNumber.value = ''
+  verificationCode.value = ''
+  generatedCode.value = ''
+  if (timer) clearInterval(timer)
+  countdown.value = 0
 }
 </script>
 
@@ -321,6 +473,28 @@ const resetForm = () => {
   max-width: 400px;
 }
 
+.login-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.8rem;
+  cursor: pointer;
+  color: var(--text-light);
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  margin-bottom: -2px;
+}
+
 .login-box h2 {
   text-align: center;
   margin-bottom: 2rem;
@@ -341,6 +515,34 @@ const resetForm = () => {
   font-weight: 600;
   color: var(--text-light);
   font-size: 0.9rem;
+}
+
+.code-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.code-input-wrapper .input {
+  flex: 1;
+}
+
+.btn-send-code {
+  padding: 0 1rem;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+
+.btn-send-code:disabled {
+  border-color: #ccc;
+  color: #999;
+  cursor: not-allowed;
 }
 
 .btn-primary {
