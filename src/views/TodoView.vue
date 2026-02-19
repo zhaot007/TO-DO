@@ -22,20 +22,16 @@
         <div class="stats-all-in-one">
           <!-- 全部 -->
           <div class="stat-row clickable" @click="setFilter('all')" :class="{ active: currentFilter === 'all' }">
-            <div class="stat-header">
-              <span class="stat-icon">📋</span>
-              <span class="stat-count-bracket">({{ baseFilteredTasks.length }})</span>
-            </div>
+            <span class="stat-icon">📋</span>
             <span class="stat-label-mini">全部</span>
+            <span class="stat-count-bracket">({{ baseFilteredTasks.length }})</span>
           </div>
 
           <!-- 占比 -->
           <div class="stat-row">
-            <div class="stat-header">
-              <span class="stat-icon">📊</span>
-              <span class="stat-count-bracket">({{ completionPercentage }}%)</span>
-            </div>
+            <span class="stat-icon">📊</span>
             <span class="stat-label-mini">占比</span>
+            <span class="stat-count-bracket">({{ completionPercentage }}%)</span>
           </div>
 
           <!-- 分类统计 -->
@@ -46,11 +42,9 @@
             :class="{ active: currentCategoryFilter === cat.value }"
             @click="setCategoryFilter(cat.value)"
           >
-            <div class="stat-header">
-              <span class="stat-icon">{{ cat.icon }}</span>
-              <span class="stat-count-bracket">({{ getCategoryCount(cat.value) }})</span>
-            </div>
+            <span class="stat-icon">{{ cat.icon }}</span>
             <span class="stat-label-mini">{{ cat.label }}</span>
+            <span class="stat-count-bracket">({{ getCategoryCount(cat.value) }})</span>
           </div>
           
           <button class="add-btn-text" @click="showAddForm = !showAddForm">{{ showAddForm ? '收起' : '添加' }}</button>
@@ -60,25 +54,19 @@
         <div class="filter-row">
           <div class="category-filters-unified">
             <div class="stat-row clickable" @click="setFilter('pending')" :class="{ active: currentFilter === 'pending' }">
-              <div class="stat-header">
-                <span class="stat-icon">⏳</span>
-                <span class="stat-count-bracket">({{ pendingCount }})</span>
-              </div>
+              <span class="stat-icon">⏳</span>
               <span class="stat-label-mini">待办</span>
+              <span class="stat-count-bracket">({{ pendingCount }})</span>
             </div>
             <div class="stat-row clickable" @click="setFilter('completed')" :class="{ active: currentFilter === 'completed' }">
-              <div class="stat-header">
-                <span class="stat-icon">✅</span>
-                <span class="stat-count-bracket success">({{ completedCount }})</span>
-              </div>
+              <span class="stat-icon">✅</span>
               <span class="stat-label-mini">已完成</span>
+              <span class="stat-count-bracket success">({{ completedCount }})</span>
             </div>
             <div class="stat-row clickable" @click="setFilter('overdue')" :class="{ active: currentFilter === 'overdue' }">
-              <div class="stat-header">
-                <span class="stat-icon">⚠️</span>
-                <span class="stat-count-bracket danger">({{ overdueCount }})</span>
-              </div>
+              <span class="stat-icon">⚠️</span>
               <span class="stat-label-mini">已逾期</span>
+              <span class="stat-count-bracket danger">({{ overdueCount }})</span>
             </div>
           </div>
           <div class="time-filter-compact">
@@ -1314,10 +1302,9 @@ onUnmounted(() => {
 /* v1.2: 统计数据横向紧凑排列 */
 .stat-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  padding: 0.3rem 0.4rem;
+  gap: 0.15rem;
+  padding: 0.2rem 0.3rem;
   border-radius: 8px;
   transition: all 0.3s;
   flex-shrink: 1;
@@ -1338,21 +1325,13 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.stat-header {
-  display: flex;
-  align-items: center;
-  gap: 0.1rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
 .stat-icon {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   flex-shrink: 0;
 }
 
 .stat-count-bracket {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-dark);
 }
@@ -1361,7 +1340,7 @@ onUnmounted(() => {
 .stat-count-bracket.danger { color: var(--error-color); }
 
 .stat-label-mini {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-light);
   white-space: nowrap;
 }
