@@ -20,7 +20,7 @@
 
       <!-- 统计+筛选+添加 - 极简版 v1.5 -->
       <section class="dashboard-area">
-        <!-- 第一行：核心状态 -->
+        <!-- 单行布局：核心状态 + 操作按钮 -->
         <div class="stats-compact">
           <!-- 完成占比 -->
           <div class="stat-row">
@@ -51,14 +51,16 @@
             <span class="stat-label-mini">已逾期</span>
             <span class="stat-count danger">{{ overdueCount }}</span>
           </div>
-        </div>
 
-        <!-- 第二行：筛选和添加按钮 -->
-        <div class="action-buttons">
-          <button class="filter-btn" @click="showFilterModal = true">
-            🔍 筛选
+          <!-- 筛选按钮（仅图标） -->
+          <button class="icon-btn" @click="showFilterModal = true" title="高级筛选">
+            🔍
           </button>
-          <button class="add-btn-text" @click="showAddForm = !showAddForm">{{ showAddForm ? '收起' : '添加' }}</button>
+
+          <!-- 添加/收起按钮（仅图标） -->
+          <button class="icon-btn" @click="showAddForm = !showAddForm" :title="showAddForm ? '收起' : '添加任务'">
+            {{ showAddForm ? '✕' : '➕' }}
+          </button>
         </div>
 
         <!-- 添加任务表单 -->
@@ -301,7 +303,8 @@
                 :class="{ active: currentCategoryFilter === 'all' }"
                 @click="setCategoryFilter('all')"
               >
-                全部
+                <span class="chip-label">全部</span>
+                <span class="chip-count">:{{ baseFilteredTasks.length }}</span>
               </button>
               <button 
                 v-for="cat in categories" 
@@ -310,7 +313,8 @@
                 :class="{ active: currentCategoryFilter === cat.value }"
                 @click="setCategoryFilter(cat.value)"
               >
-                {{ cat.label }}
+                <span class="chip-label">{{ cat.label }}</span>
+                <span class="chip-count">:{{ getCategoryCount(cat.value) }}</span>
               </button>
             </div>
           </div>
@@ -324,28 +328,31 @@
                 :class="{ active: currentPriorityFilter === 'all' }"
                 @click="setPriorityFilter('all')"
               >
-                全部
+                <span class="chip-label">全部</span>
               </button>
               <button 
                 class="filter-chip priority-high" 
                 :class="{ active: currentPriorityFilter === 'high' }"
                 @click="setPriorityFilter('high')"
               >
-                高
+                <span class="chip-label">高</span>
+                <span class="chip-count">:{{ highPriorityCount }}</span>
               </button>
               <button 
                 class="filter-chip priority-medium" 
                 :class="{ active: currentPriorityFilter === 'medium' }"
                 @click="setPriorityFilter('medium')"
               >
-                中
+                <span class="chip-label">中</span>
+                <span class="chip-count">:{{ mediumPriorityCount }}</span>
               </button>
               <button 
                 class="filter-chip priority-low" 
                 :class="{ active: currentPriorityFilter === 'low' }"
                 @click="setPriorityFilter('low')"
               >
-                低
+                <span class="chip-label">低</span>
+                <span class="chip-count">:{{ lowPriorityCount }}</span>
               </button>
             </div>
           </div>
@@ -2420,10 +2427,37 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.25rem;
   justify-content: flex-start;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
   flex-wrap: nowrap;
   overflow-x: auto;
   padding: 0.2rem 0;
+}
+
+/* 图标按钮 */
+.icon-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
 }
 
 /* 第二行：操作按钮 */
@@ -3053,7 +3087,7 @@ onUnmounted(() => {
 }
 
 .btn-refresh:active {
-  transform: scale(0.9);
+  transform: scale(1.4);
 }
 
 .btn-refresh.spinning {
@@ -3963,29 +3997,47 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.3s;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.filter-chip .chip-label {
+  font-weight: 500;
+}
+
+.filter-chip .chip-count {
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .filter-chip:hover {
   border-color: #667eea;
   background: rgba(102, 126, 234, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .filter-chip.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-color: transparent;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .filter-chip.priority-high.active {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
 }
 
 .filter-chip.priority-medium.active {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
 }
 
 .filter-chip.priority-low.active {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  box-shadow: 0 4px 12px rgba(67, 233, 123, 0.3);
 }
 
 .search-input-wrapper {
