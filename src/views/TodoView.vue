@@ -53,7 +53,7 @@
               :class="{ active: currentCategoryFilter === cat.value }"
               @click="setCategoryFilter(cat.value)"
             >
-              {{ cat.label }}
+              {{ cat.label }} ({{ getCategoryCount(cat.value) }})
             </button>
           </div>
           <div class="time-filter-compact">
@@ -497,6 +497,15 @@ const completionPercentage = computed(() => {
 const pendingCount = computed(() => baseFilteredTasks.value.filter(t => t.status === TaskStatus.PENDING).length)
 const completedCount = computed(() => baseFilteredTasks.value.filter(t => t.status === TaskStatus.COMPLETED).length)
 const overdueCount = computed(() => baseFilteredTasks.value.filter(t => t.status === TaskStatus.OVERDUE).length)
+
+// 分类统计（基于当前时间筛选）
+const getCategoryCount = (category) => {
+  const filtered = taskStore.getFilteredTasks('all', category, {
+    start: startDate.value,
+    end: endDate.value
+  })
+  return filtered.length
+}
 
 // 个人主页统计（基于所有任务）
 const completionRate = computed(() => {
