@@ -238,6 +238,15 @@
             ›
           </button>
         </div>
+
+        <!-- 页脚版权信息 -->
+        <footer class="app-footer">
+          <div class="footer-content">
+            <p class="footer-version">TO-DO App v1.4.0</p>
+            <p class="footer-copyright">© 2026 TO-DO App. All rights reserved.</p>
+            <p class="footer-license">MIT License | 离线存储，数据安全</p>
+          </div>
+        </footer>
       </div>
     </main>
 
@@ -320,39 +329,16 @@
             </div>
           </div>
 
-          <!-- 番茄统计 -->
-          <div class="pomodoro-stats">
-            <h4 class="stats-title">🍅 番茄统计</h4>
-            <div class="pomodoro-grid">
-              <div class="pomodoro-item earned">
-                <div class="pomodoro-icon">✅</div>
-                <div class="pomodoro-info">
-                  <div class="pomodoro-count">{{ earnedPomodoros }}</div>
-                  <div class="pomodoro-label">已获得番茄</div>
-                </div>
-              </div>
-              <div class="pomodoro-item pending">
-                <div class="pomodoro-icon">⏳</div>
-                <div class="pomodoro-info">
-                  <div class="pomodoro-count">{{ pendingPomodoros }}</div>
-                  <div class="pomodoro-label">待获得番茄</div>
-                </div>
-              </div>
-              <div class="pomodoro-item lost">
-                <div class="pomodoro-icon">❌</div>
-                <div class="pomodoro-info">
-                  <div class="pomodoro-count">-{{ lostPomodoros }}</div>
-                  <div class="pomodoro-label">逾期扣除</div>
-                </div>
-              </div>
-              <div class="pomodoro-item total">
-                <div class="pomodoro-icon">🏆</div>
-                <div class="pomodoro-info">
-                  <div class="pomodoro-count">{{ totalPomodoros }}</div>
-                  <div class="pomodoro-label">净获得番茄</div>
-                </div>
+          <!-- 番茄统计入口 -->
+          <div class="pomodoro-entry" @click="showPomodoroStats = true">
+            <div class="entry-icon">🍅</div>
+            <div class="entry-content">
+              <div class="entry-title">番茄钟统计</div>
+              <div class="entry-summary">
+                已获得 {{ earnedPomodoros }} 个 | 净获得 {{ totalPomodoros }} 个
               </div>
             </div>
+            <div class="entry-arrow">›</div>
           </div>
 
           <!-- 修改密码 -->
@@ -423,6 +409,209 @@
             <div class="contact-info">
               <span class="contact-icon">📞</span>
               <span class="contact-text">联系电话：17858441076</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 番茄统计详情弹窗 -->
+    <div v-if="showPomodoroStats" class="modal-overlay" @click.self="showPomodoroStats = false">
+      <div class="modal-content glass-card" style="background: white; max-width: 600px;">
+        <div class="modal-header">
+          <h3>🍅 番茄钟统计</h3>
+          <button class="close-btn" @click="showPomodoroStats = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- 总览 -->
+          <div class="pomodoro-overview">
+            <div class="overview-item earned">
+              <div class="overview-icon">✅</div>
+              <div class="overview-value">{{ earnedPomodoros }}</div>
+              <div class="overview-label">已获得</div>
+            </div>
+            <div class="overview-item pending">
+              <div class="overview-icon">⏳</div>
+              <div class="overview-value">{{ pendingPomodoros }}</div>
+              <div class="overview-label">待获得</div>
+            </div>
+            <div class="overview-item lost">
+              <div class="overview-icon">❌</div>
+              <div class="overview-value">{{ lostPomodoros }}</div>
+              <div class="overview-label">逾期扣除</div>
+            </div>
+            <div class="overview-item total">
+              <div class="overview-icon">🏆</div>
+              <div class="overview-value">{{ totalPomodoros }}</div>
+              <div class="overview-label">净获得</div>
+            </div>
+          </div>
+
+          <!-- 等级徽章 -->
+          <div class="level-badge">
+            <div class="level-badge-icon">{{ getLevelBadge().icon }}</div>
+            <div class="badge-info">
+              <div class="badge-title">{{ getLevelBadge().title }}</div>
+              <div class="badge-desc">累计获得 {{ earnedPomodoros }} 个番茄</div>
+            </div>
+          </div>
+
+          <!-- 近7天趋势 -->
+          <div class="stats-section">
+            <h4 class="section-title">📈 近7天趋势</h4>
+            <div class="trend-chart">
+              <div v-for="(day, index) in getLast7DaysTrend()" :key="index" class="trend-bar-wrapper">
+                <div class="trend-bar" :style="{ height: (day.count / getMaxDailyInWeek() * 100) + '%' }">
+                  <span class="trend-value">{{ day.count }}</span>
+                </div>
+                <div class="trend-label">{{ day.label }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 时间维度统计 -->
+          <div class="stats-section">
+            <h4 class="section-title">📅 时间统计</h4>
+            <div class="stats-grid">
+              <div class="stats-card time-today">
+                <div class="stats-icon">☀️</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByTime('today') }}</div>
+                  <div class="stats-label">今日</div>
+                </div>
+              </div>
+              <div class="stats-card time-week">
+                <div class="stats-icon">📊</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByTime('week') }}</div>
+                  <div class="stats-label">本周</div>
+                </div>
+              </div>
+              <div class="stats-card time-month">
+                <div class="stats-icon">📈</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByTime('month') }}</div>
+                  <div class="stats-label">本月</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分类占比 -->
+          <div class="stats-section">
+            <h4 class="section-title">📊 分类占比</h4>
+            <div class="category-bars">
+              <div class="category-bar-item">
+                <div class="category-bar-header">
+                  <span>💼 工作</span>
+                  <span class="category-bar-value">{{ getPomodorosByCategory('work') }} ({{ getCategoryPercent('work') }}%)</span>
+                </div>
+                <div class="category-bar-bg">
+                  <div class="category-bar-fill work" :style="{ width: getCategoryPercent('work') + '%' }"></div>
+                </div>
+              </div>
+              <div class="category-bar-item">
+                <div class="category-bar-header">
+                  <span>📚 学习</span>
+                  <span class="category-bar-value">{{ getPomodorosByCategory('study') }} ({{ getCategoryPercent('study') }}%)</span>
+                </div>
+                <div class="category-bar-bg">
+                  <div class="category-bar-fill study" :style="{ width: getCategoryPercent('study') + '%' }"></div>
+                </div>
+              </div>
+              <div class="category-bar-item">
+                <div class="category-bar-header">
+                  <span>🏠 生活</span>
+                  <span class="category-bar-value">{{ getPomodorosByCategory('life') }} ({{ getCategoryPercent('life') }}%)</span>
+                </div>
+                <div class="category-bar-bg">
+                  <div class="category-bar-fill life" :style="{ width: getCategoryPercent('life') + '%' }"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 按分类统计 -->
+          <div class="stats-section">
+            <h4 class="section-title">🏷️ 分类明细</h4>
+            <div class="stats-grid">
+              <div class="stats-card">
+                <div class="stats-icon">💼</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByCategory('work') }}</div>
+                  <div class="stats-label">工作</div>
+                </div>
+              </div>
+              <div class="stats-card">
+                <div class="stats-icon">📚</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByCategory('study') }}</div>
+                  <div class="stats-label">学习</div>
+                </div>
+              </div>
+              <div class="stats-card">
+                <div class="stats-icon">🏠</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByCategory('life') }}</div>
+                  <div class="stats-label">生活</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 按优先级统计 -->
+          <div class="stats-section">
+            <h4 class="section-title">⚡ 按优先级统计</h4>
+            <div class="stats-grid">
+              <div class="stats-card priority-high">
+                <div class="stats-icon">🔴</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByPriority('high') }}</div>
+                  <div class="stats-label">高优先级</div>
+                </div>
+              </div>
+              <div class="stats-card priority-medium">
+                <div class="stats-icon">🟠</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByPriority('medium') }}</div>
+                  <div class="stats-label">中优先级</div>
+                </div>
+              </div>
+              <div class="stats-card priority-low">
+                <div class="stats-icon">🔵</div>
+                <div class="stats-info">
+                  <div class="stats-value">{{ getPomodorosByPriority('low') }}</div>
+                  <div class="stats-label">低优先级</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 成就统计 -->
+          <div class="stats-section">
+            <h4 class="section-title">🎯 成就统计</h4>
+            <div class="achievement-grid">
+              <div class="achievement-card">
+                <div class="achievement-icon">🔥</div>
+                <div class="achievement-info">
+                  <div class="achievement-value">{{ getConsecutiveDays() }}</div>
+                  <div class="achievement-label">连续打卡</div>
+                </div>
+              </div>
+              <div class="achievement-card">
+                <div class="achievement-icon">⭐</div>
+                <div class="achievement-info">
+                  <div class="achievement-value">{{ getMaxDailyPomodoros() }}</div>
+                  <div class="achievement-label">单日最高</div>
+                </div>
+              </div>
+              <div class="achievement-card">
+                <div class="achievement-icon">📊</div>
+                <div class="achievement-info">
+                  <div class="achievement-value">{{ getCompletionRate() }}%</div>
+                  <div class="achievement-label">完成率</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -545,6 +734,7 @@ const endDate = ref('')
 const countdownInterval = ref(null)
 const showTrash = ref(false)
 const showProfile = ref(false)
+const showPomodoroStats = ref(false)
 const editingTask = ref(null)
 const editDescription = ref('')
 const editText = ref('')
@@ -698,6 +888,156 @@ const totalPomodoros = computed(() => {
   // 净获得番茄数 = 已获得 - 逾期扣除
   return earnedPomodoros.value - lostPomodoros.value
 })
+
+// 按分类统计番茄数
+const getPomodorosByCategory = (category) => {
+  return taskStore.tasks
+    .filter(t => t.category === category && t.status === TaskStatus.COMPLETED)
+    .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+}
+
+// 按优先级统计番茄数
+const getPomodorosByPriority = (priority) => {
+  return taskStore.tasks
+    .filter(t => t.priority === priority && t.status === TaskStatus.COMPLETED)
+    .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+}
+
+// 按时间统计番茄数
+const getPomodorosByTime = (period) => {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  return taskStore.tasks
+    .filter(t => {
+      if (t.status !== TaskStatus.COMPLETED) return false
+      const completedDate = new Date(t.created_at)
+      
+      if (period === 'today') {
+        return completedDate >= today
+      } else if (period === 'week') {
+        const weekStart = new Date(today)
+        weekStart.setDate(today.getDate() - today.getDay())
+        return completedDate >= weekStart
+      } else if (period === 'month') {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        return completedDate >= monthStart
+      }
+      return false
+    })
+    .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+}
+
+// 连续打卡天数
+const getConsecutiveDays = () => {
+  const completedTasks = taskStore.tasks
+    .filter(t => t.status === TaskStatus.COMPLETED)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  
+  if (completedTasks.length === 0) return 0
+  
+  let consecutive = 1
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  let currentDate = new Date(completedTasks[0].created_at)
+  currentDate.setHours(0, 0, 0, 0)
+  
+  // 如果最近完成的任务不是今天或昨天，返回0
+  const daysDiff = Math.floor((today - currentDate) / (1000 * 60 * 60 * 24))
+  if (daysDiff > 1) return 0
+  
+  for (let i = 1; i < completedTasks.length; i++) {
+    const prevDate = new Date(completedTasks[i].created_at)
+    prevDate.setHours(0, 0, 0, 0)
+    
+    const diff = Math.floor((currentDate - prevDate) / (1000 * 60 * 60 * 24))
+    if (diff === 1) {
+      consecutive++
+      currentDate = prevDate
+    } else if (diff > 1) {
+      break
+    }
+  }
+  
+  return consecutive
+}
+
+// 单日最高番茄数
+const getMaxDailyPomodoros = () => {
+  const dailyStats = {}
+  
+  taskStore.tasks
+    .filter(t => t.status === TaskStatus.COMPLETED)
+    .forEach(t => {
+      const date = new Date(t.created_at).toDateString()
+      if (!dailyStats[date]) dailyStats[date] = 0
+      dailyStats[date] += getPomodoroCount(t.priority)
+    })
+  
+  return Object.keys(dailyStats).length > 0 
+    ? Math.max(...Object.values(dailyStats)) 
+    : 0
+}
+
+// 完成率
+const getCompletionRate = () => {
+  const total = taskStore.tasks.length
+  if (total === 0) return 0
+  const completed = taskStore.tasks.filter(t => t.status === TaskStatus.COMPLETED).length
+  return Math.round((completed / total) * 100)
+}
+
+// 近7天趋势数据
+const getLast7DaysTrend = () => {
+  const trend = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(today.getDate() - i)
+    const dateStr = date.toDateString()
+    
+    const count = taskStore.tasks
+      .filter(t => {
+        if (t.status !== TaskStatus.COMPLETED) return false
+        const taskDate = new Date(t.created_at)
+        return taskDate.toDateString() === dateStr
+      })
+      .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+    
+    const label = i === 0 ? '今天' : i === 1 ? '昨天' : `${date.getMonth() + 1}/${date.getDate()}`
+    trend.push({ label, count, date: dateStr })
+  }
+  
+  return trend
+}
+
+// 获取7天内最大值（用于柱状图高度计算）
+const getMaxDailyInWeek = () => {
+  const trend = getLast7DaysTrend()
+  const max = Math.max(...trend.map(d => d.count))
+  return max || 1 // 避免除以0
+}
+
+// 分类占比
+const getCategoryPercent = (category) => {
+  const total = earnedPomodoros.value
+  if (total === 0) return 0
+  const categoryCount = getPomodorosByCategory(category)
+  return Math.round((categoryCount / total) * 100)
+}
+
+// 等级徽章
+const getLevelBadge = () => {
+  const total = earnedPomodoros.value
+  if (total >= 500) return { icon: '👑', title: '番茄大师' }
+  if (total >= 300) return { icon: '🏆', title: '番茄专家' }
+  if (total >= 150) return { icon: '⭐', title: '番茄达人' }
+  if (total >= 50) return { icon: '🌟', title: '番茄新星' }
+  return { icon: '🌱', title: '番茄新手' }
+}
 
 // 计算属性：总页数
 const totalPages = computed(() => {
@@ -2051,6 +2391,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
+  font-size: 0.75rem;
 }
 
 /* 番茄数徽章 */
@@ -2298,91 +2639,328 @@ onUnmounted(() => {
   color: var(--text-light);
 }
 
-/* 番茄统计 */
-.pomodoro-stats {
-  padding: 1.5rem;
+/* 番茄统计入口 */
+.pomodoro-entry {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem;
   background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
   border-radius: 12px;
   margin-bottom: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.stats-title {
+.pomodoro-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.entry-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.entry-content {
+  flex: 1;
+}
+
+.entry-title {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
   color: var(--text-dark);
+  margin-bottom: 0.3rem;
 }
 
-.pomodoro-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.entry-summary {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.entry-arrow {
+  font-size: 1.5rem;
+  color: var(--text-light);
+}
+
+/* 等级徽章 */
+.level-badge {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.level-badge-icon {
+  font-size: 3rem;
+}
+
+.badge-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.badge-desc {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* 趋势图 */
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 180px;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  gap: 0.5rem;
+}
+
+.trend-bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.trend-bar {
+  width: 100%;
+  min-height: 20px;
+  background: linear-gradient(to top, var(--primary-color), rgba(102, 126, 234, 0.6));
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  transition: all 0.3s;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.3rem;
+}
+
+.trend-bar:hover {
+  background: linear-gradient(to top, #5568d3, var(--primary-color));
+}
+
+.trend-value {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.trend-label {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-light);
+  text-align: center;
+}
+
+/* 分类占比条 */
+.category-bars {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
-.pomodoro-item {
+.category-bar-item {
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.category-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+.category-bar-value {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.category-bar-bg {
+  height: 24px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.category-bar-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+.category-bar-fill.work {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.category-bar-fill.study {
+  background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+}
+
+.category-bar-fill.life {
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* 番茄统计详情弹窗 */
+.pomodoro-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.overview-item {
+  text-align: center;
   padding: 1rem;
   border-radius: 10px;
   transition: all 0.3s;
 }
 
-.pomodoro-item:hover {
+.overview-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.pomodoro-item.earned {
+.overview-item.earned {
   background: rgba(76, 175, 80, 0.1);
 }
 
-.pomodoro-item.pending {
+.overview-item.pending {
   background: rgba(255, 152, 0, 0.1);
 }
 
-.pomodoro-item.lost {
+.overview-item.lost {
   background: rgba(244, 67, 54, 0.1);
 }
 
-.pomodoro-item.total {
+.overview-item.total {
   background: rgba(102, 126, 234, 0.15);
-  grid-column: span 2;
 }
 
-.pomodoro-icon {
+.overview-icon {
   font-size: 2rem;
-  flex-shrink: 0;
+  margin-bottom: 0.5rem;
 }
 
-.pomodoro-info {
-  flex: 1;
-}
-
-.pomodoro-count {
+.overview-value {
   font-size: 1.8rem;
   font-weight: 700;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.3rem;
 }
 
-.pomodoro-item.earned .pomodoro-count {
+.overview-item.earned .overview-value {
   color: #4caf50;
 }
 
-.pomodoro-item.pending .pomodoro-count {
+.overview-item.pending .overview-value {
   color: #ff9800;
 }
 
-.pomodoro-item.lost .pomodoro-count {
+.overview-item.lost .overview-value {
   color: #f44336;
 }
 
-.pomodoro-item.total .pomodoro-count {
+.overview-item.total .overview-value {
   color: var(--primary-color);
-  font-size: 2.2rem;
 }
 
-.pomodoro-label {
+.overview-label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.stats-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.stats-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.stats-card:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.stats-icon {
+  font-size: 1.8rem;
+}
+
+.stats-info {
+  flex: 1;
+}
+
+.stats-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.2rem;
+}
+
+.stats-label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.achievement-card {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.achievement-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+}
+
+.achievement-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.achievement-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.3rem;
+}
+
+.achievement-label {
   font-size: 0.85rem;
   color: var(--text-light);
   font-weight: 500;
@@ -2899,6 +3477,36 @@ onUnmounted(() => {
   font-weight: 600;
   min-width: 60px;
   text-align: center;
+}
+
+/* 页脚版权信息 */
+.app-footer {
+  margin-top: 2rem;
+  padding: 1.5rem 0 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer-content {
+  text-align: center;
+}
+
+.footer-version {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.footer-copyright {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.2rem;
+}
+
+.footer-license {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
 }
 
 /* 编辑模态框周期选择器 */
