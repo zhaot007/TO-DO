@@ -353,7 +353,7 @@
 
     <!-- 个人主页弹窗 -->
     <div v-if="showProfile" class="modal-overlay" @click.self="showProfile = false">
-      <div class="modal-content glass-card" style="background: white; max-width: 500px;">
+      <div class="modal-content glass-card profile-modal" style="background: white;">
         <div class="modal-header">
           <h3>个人主页</h3>
           <button class="close-btn" @click="showProfile = false">&times;</button>
@@ -387,22 +387,22 @@
           </div>
 
           <!-- 统计信息 -->
-          <div class="profile-stats">
+          <div class="profile-stats-compact">
             <div class="stat-item">
-              <div class="stat-value">{{ taskStore.tasks.length }}</div>
-              <div class="stat-label">总任务</div>
+              <span class="stat-label">总任务</span>
+              <span class="stat-value">{{ taskStore.tasks.length }}</span>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ completedCount }}</div>
-              <div class="stat-label">已完成</div>
+              <span class="stat-label">已完成</span>
+              <span class="stat-value">{{ completedCount }}</span>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ pendingCount }}</div>
-              <div class="stat-label">待完成</div>
+              <span class="stat-label">待完成</span>
+              <span class="stat-value">{{ pendingCount }}</span>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ completionRate }}%</div>
-              <div class="stat-label">完成率</div>
+              <span class="stat-label">完成率</span>
+              <span class="stat-value">{{ completionRate }}%</span>
             </div>
           </div>
 
@@ -418,62 +418,26 @@
             <div class="entry-arrow">›</div>
           </div>
 
-          <!-- 修改密码 -->
-          <div class="profile-form">
-            <div class="form-group">
-              <label>修改密码</label>
-              <div class="password-row">
-                <input 
-                  v-model="oldPassword" 
-                  type="password" 
-                  class="input" 
-                  placeholder="当前密码"
-                >
-                <input 
-                  v-model="newPassword" 
-                  type="password" 
-                  class="input" 
-                  placeholder="新密码"
-                >
-                <button class="btn btn-primary btn-compact" @click="updatePassword">保存</button>
-              </div>
+          <!-- 修改密码入口 -->
+          <div class="settings-entry" @click="showPasswordModal = true">
+            <div class="entry-icon">🔒</div>
+            <div class="entry-content">
+              <div class="entry-title">修改密码</div>
+              <div class="entry-summary">修改账号登录密码</div>
             </div>
+            <div class="entry-arrow">›</div>
           </div>
 
-          <!-- 绑定手机号 -->
-          <div class="profile-form">
-            <div class="form-group">
-              <label>📱 绑定手机号</label>
-              <div v-if="userProfileInfo.boundPhone" class="bound-phone-info">
-                <span class="phone-display">{{ userProfileInfo.boundPhone }}</span>
-                <button class="btn btn-secondary btn-compact" @click="unbindPhone">解绑</button>
+          <!-- 绑定手机号入口 -->
+          <div class="settings-entry" @click="showPhoneModal = true">
+            <div class="entry-icon">📱</div>
+            <div class="entry-content">
+              <div class="entry-title">绑定手机号</div>
+              <div class="entry-summary">
+                {{ userProfileInfo.boundPhone ? userProfileInfo.boundPhone : '未绑定' }}
               </div>
-              <div v-else class="bind-phone-row">
-                <input 
-                  v-model="bindPhoneNumber" 
-                  type="tel" 
-                  class="input" 
-                  placeholder="手机号"
-                  maxlength="11"
-                >
-                <input 
-                  v-model="bindVerificationCode" 
-                  type="text" 
-                  class="input" 
-                  placeholder="验证码"
-                  maxlength="6"
-                >
-                <button 
-                  class="btn btn-secondary btn-compact" 
-                  :disabled="bindCountdown > 0"
-                  @click="sendBindSMS"
-                >
-                  {{ bindCountdown > 0 ? `${bindCountdown}s` : '获取' }}
-                </button>
-                <button class="btn btn-primary btn-compact" @click="confirmBindPhone">绑定</button>
-              </div>
-              <p class="bind-hint">绑定后可使用手机号+验证码登录此账号</p>
             </div>
+            <div class="entry-arrow">›</div>
           </div>
 
           <!-- 数据导出与导入 -->
@@ -549,6 +513,98 @@
             <p class="app-version">TO-DO App v1.4.0</p>
             <p class="copyright">© 2026 TO-DO App. All rights reserved.</p>
             <p class="footer-links">MIT License | 离线存储，数据安全 | 隐私政策</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修改密码弹窗 -->
+    <div v-if="showPasswordModal" class="modal-overlay" @click.self="showPasswordModal = false">
+      <div class="modal-content glass-card" style="background: white; max-width: 400px;">
+        <div class="modal-header">
+          <h3>🔒 修改密码</h3>
+          <button class="close-btn" @click="showPasswordModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>当前密码</label>
+            <input 
+              v-model="oldPassword" 
+              type="password" 
+              class="input" 
+              placeholder="请输入当前密码"
+            >
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input 
+              v-model="newPassword" 
+              type="password" 
+              class="input" 
+              placeholder="请输入新密码"
+            >
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" @click="showPasswordModal = false">取消</button>
+            <button class="btn btn-primary" @click="updatePassword">确认修改</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 绑定手机号弹窗 -->
+    <div v-if="showPhoneModal" class="modal-overlay" @click.self="showPhoneModal = false">
+      <div class="modal-content glass-card" style="background: white; max-width: 400px;">
+        <div class="modal-header">
+          <h3>📱 绑定手机号</h3>
+          <button class="close-btn" @click="showPhoneModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="userProfileInfo.boundPhone">
+            <div class="bound-phone-display">
+              <p class="phone-number">{{ userProfileInfo.boundPhone }}</p>
+              <p class="phone-hint">已绑定手机号</p>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" @click="showPhoneModal = false">关闭</button>
+              <button class="btn btn-danger" @click="unbindPhone">解绑</button>
+            </div>
+          </div>
+          <div v-else>
+            <div class="form-group">
+              <label>手机号</label>
+              <input 
+                v-model="bindPhoneNumber" 
+                type="tel" 
+                class="input" 
+                placeholder="请输入手机号"
+                maxlength="11"
+              >
+            </div>
+            <div class="form-group">
+              <label>验证码</label>
+              <div class="verification-row">
+                <input 
+                  v-model="bindVerificationCode" 
+                  type="text" 
+                  class="input" 
+                  placeholder="请输入验证码"
+                  maxlength="6"
+                >
+                <button 
+                  class="btn btn-secondary" 
+                  :disabled="bindCountdown > 0"
+                  @click="sendBindSMS"
+                >
+                  {{ bindCountdown > 0 ? `${bindCountdown}s` : '获取验证码' }}
+                </button>
+              </div>
+            </div>
+            <p class="bind-hint">绑定后可使用手机号+验证码登录此账号</p>
+            <div class="form-actions">
+              <button class="btn btn-secondary" @click="showPhoneModal = false">取消</button>
+              <button class="btn btn-primary" @click="confirmBindPhone">确认绑定</button>
+            </div>
           </div>
         </div>
       </div>
@@ -877,6 +933,8 @@ const showProfile = ref(false)
 const showPomodoroStats = ref(false)
 const showSupport = ref(false)
 const showPrivacyPolicy = ref(false)
+const showPasswordModal = ref(false)
+const showPhoneModal = ref(false)
 const editingTask = ref(null)
 const editDescription = ref('')
 const editText = ref('')
@@ -1629,6 +1687,7 @@ const updatePassword = async () => {
   
   oldPassword.value = ''
   newPassword.value = ''
+  showPasswordModal.value = false
   alert('密码修改成功')
 }
 
@@ -1699,6 +1758,7 @@ const confirmBindPhone = async () => {
   bindPhoneNumber.value = ''
   bindVerificationCode.value = ''
   bindGeneratedCode.value = ''
+  showPhoneModal.value = false
   
   showNotification('手机号绑定成功！', 'success')
 }
@@ -1725,6 +1785,7 @@ const unbindPhone = async () => {
   await Preferences.set({ key: 'phoneMapping', value: JSON.stringify(phoneMapping) })
   
   userProfileInfo.value.boundPhone = null
+  showPhoneModal.value = false
   showNotification('手机号已解绑', 'success')
 }
 
@@ -3079,11 +3140,14 @@ onUnmounted(() => {
 .password-row .input {
   flex: 1;
   margin: 0;
+  font-size: 0.85rem;
+  padding: 0.5rem;
 }
 
 .btn-compact {
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 0.9rem;
   white-space: nowrap;
+  font-size: 0.85rem;
 }
 
 .bind-phone-row {
@@ -3095,6 +3159,8 @@ onUnmounted(() => {
 .bind-phone-row .input {
   flex: 1;
   margin: 0;
+  font-size: 0.85rem;
+  padding: 0.5rem;
 }
 
 .bound-phone-info {
@@ -3110,9 +3176,10 @@ onUnmounted(() => {
 }
 
 .bind-hint {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.75rem;
+  margin: 0.4rem 0 0 0;
+  font-size: 0.7rem;
   color: #999;
+  line-height: 1.3;
 }
 
 .profile-details {
@@ -3130,32 +3197,34 @@ onUnmounted(() => {
   gap: 0.2rem;
   line-height: 1.3;
 }
-
-.profile-stats {
+/* 统计信息 - 紧凑单行 */
+.profile-stats-compact {
   display: flex;
-  justify-content: space-around;
-  padding: 0.5rem 0.8rem;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 12px;
   margin-bottom: 1rem;
+  gap: 0.5rem;
 }
 
-.stat-item {
-  text-align: center;
+.profile-stats-compact .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  justify-content: center;
 }
 
-.stat-value {
-  font-size: 1.3rem;
+.profile-stats-compact .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.profile-stats-compact .stat-value {
+  font-size: 1.1rem;
   font-weight: bold;
   color: var(--primary-color);
-  margin-bottom: 0.2rem;
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.7rem;
-  color: var(--text-light);
-  line-height: 1;
 }
 
 /* 番茄统计入口 */
@@ -3166,7 +3235,7 @@ onUnmounted(() => {
   padding: 0.7rem 0.9rem;
   background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
   border-radius: 12px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -3201,6 +3270,76 @@ onUnmounted(() => {
 .entry-arrow {
   font-size: 1.3rem;
   color: var(--text-light);
+}
+
+/* 设置入口 */
+.settings-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  margin-bottom: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.settings-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* 弹窗表单样式 */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.verification-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.verification-row .input {
+  flex: 1;
+}
+
+.bound-phone-display {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.phone-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.phone-hint {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.bind-hint {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 0.5rem;
 }
 
 /* 等级徽章 */
@@ -3487,7 +3626,7 @@ onUnmounted(() => {
 }
 
 .profile-form {
-  padding: 0 1rem;
+  padding: 0;
 }
 
 .form-group {
@@ -3515,8 +3654,8 @@ onUnmounted(() => {
 /* 支持与联系区域 */
 /* 数据导出区域 */
 .export-section {
-  margin-top: 1.5rem;
-  padding: 1rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
   border-radius: 12px;
   border: 2px solid rgba(102, 126, 234, 0.2);
@@ -3524,21 +3663,22 @@ onUnmounted(() => {
 }
 
 .export-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.95rem;
+  margin: 0 0 0.3rem 0;
+  font-size: 0.85rem;
   color: var(--text-dark);
+  font-weight: 600;
 }
 
 .export-desc {
-  margin: 0 0 1rem 0;
-  font-size: 0.8rem;
+  margin: 0 0 0.8rem 0;
+  font-size: 0.7rem;
   color: var(--text-light);
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .data-buttons {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   justify-content: center;
 }
 
@@ -3546,15 +3686,15 @@ onUnmounted(() => {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
   border: none;
-  padding: 0.6rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex: 1;
   justify-content: center;
 }
@@ -3718,13 +3858,23 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
+.profile-modal {
+  max-width: 90%;
+  width: 90%;
+  padding: 1.5rem;
+}
+
+.profile-modal .modal-body {
+  padding: 0;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border-bottom: 1px solid #eee;
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem;
 }
 
 .close-btn {
