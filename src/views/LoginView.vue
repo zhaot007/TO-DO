@@ -77,11 +77,44 @@
               {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
             </button>
           </div>
+          <p class="sms-hint">💡 模拟短信，验证码将通过系统通知发送</p>
         </div>
       </template>
       
       <!-- 注册特有字段 -->
       <template v-if="isRegister">
+        <div class="input-group">
+          <label for="registerPhone">绑定手机号（可选）</label>
+          <input 
+            type="tel" 
+            id="registerPhone" 
+            v-model="registerPhoneNumber" 
+            class="input"
+            placeholder="可选，绑定后可用手机号登录"
+            maxlength="11"
+          >
+        </div>
+        <div v-if="registerPhoneNumber" class="input-group code-group">
+          <label for="registerCode">验证码</label>
+          <div class="code-input-wrapper">
+            <input 
+              type="text" 
+              id="registerCode" 
+              v-model="registerVerificationCode" 
+              class="input"
+              placeholder="6位验证码"
+              maxlength="6"
+            >
+            <button 
+              class="btn-send-code" 
+              :disabled="registerCountdown > 0" 
+              @click="sendRegisterSMS"
+            >
+              {{ registerCountdown > 0 ? `${registerCountdown}s` : '获取验证码' }}
+            </button>
+          </div>
+          <p class="sms-hint">💡 模拟短信，验证码将通过系统通知发送</p>
+        </div>
         <div class="input-group">
           <label for="securityQuestion">安全问题（可选）</label>
           <select v-model="securityQuestion" class="input">
@@ -184,6 +217,13 @@ const generatedCode = ref('')
 const countdown = ref(0)
 let timer = null
 
+// 注册时绑定手机号
+const registerPhoneNumber = ref('')
+const registerVerificationCode = ref('')
+const registerGeneratedCode = ref('')
+const registerCountdown = ref(0)
+let registerTimer = null
+
 const securityQuestions = {
   pet: '你的第一只宠物叫什么？',
   city: '你出生在哪个城市？',
@@ -233,6 +273,43 @@ const sendMockSMS = async () => {
   }, 1000)
 }
 
+const sendRegisterSMS = async () => {
+  if (!/^1[3-9]\d{9}$/.test(registerPhoneNumber.value)) {
+    error.value = '请输入正确的手机号'
+    return
+  }
+
+  // 检查手机号是否已被使用
+  const { value: phoneMappingData } = await Preferences.get({ key: 'phoneMapping' })
+  const phoneMapping = phoneMappingData ? JSON.parse(phoneMappingData) : {}
+  
+  if (phoneMapping[registerPhoneNumber.value]) {
+    error.value = '该手机号已被绑定'
+    return
+  }
+
+  registerGeneratedCode.value = Math.floor(100000 + Math.random() * 900000).toString()
+  
+  await LocalNotifications.schedule({
+    notifications: [{
+      title: '【TO-DO 注册验证码】',
+      body: `您的注册验证码为：${registerGeneratedCode.value}，请在5分钟内完成验证。`,
+      id: 3,
+      schedule: { at: new Date(Date.now() + 1000) }
+    }]
+  })
+
+  emit('notify', { message: '验证码已通过系统通知发送', type: 'info' })
+  
+  registerCountdown.value = 60
+  registerTimer = setInterval(() => {
+    registerCountdown.value--
+    if (registerCountdown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
+}
+
 const handleSubmit = async () => {
   error.value = ''
   
@@ -262,25 +339,34 @@ const handlePhoneLogin = async () => {
     return
   }
 
-  // 手机号登录逻辑：如果用户不存在则自动注册
-  const { value } = await Preferences.get({ key: 'users' })
-  const users = value ? JSON.parse(value) : {}
+  // 检查手机号是否已绑定到某个账号
+  const { value: phoneMappingData } = await Preferences.get({ key: 'phoneMapping' })
+  const phoneMapping = phoneMappingData ? JSON.parse(phoneMappingData) : {}
   
-  const userKey = `phone_${phoneNumber.value}`
-  if (!users[userKey]) {
-    // 自动创建手机用户，密码随机或不设
-    users[userKey] = 'phone_user_no_pwd'
-    await Preferences.set({ key: 'users', value: JSON.stringify(users) })
+  let userKey
+  if (phoneMapping[phoneNumber.value]) {
+    // 手机号已绑定，登录到绑定的账号
+    userKey = phoneMapping[phoneNumber.value]
+  } else {
+    // 手机号未绑定，创建新的手机号账号
+    userKey = `phone_${phoneNumber.value}`
     
-    // 初始化用户信息
-    const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
-    const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
-    userInfo[userKey] = {
-      username: phoneNumber.value,
-      registerTime: new Date().toISOString(),
-      lastLoginTime: new Date().toISOString()
+    const { value } = await Preferences.get({ key: 'users' })
+    const users = value ? JSON.parse(value) : {}
+    
+    if (!users[userKey]) {
+      users[userKey] = 'phone_user_no_pwd'
+      await Preferences.set({ key: 'users', value: JSON.stringify(users) })
+      
+      const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+      const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+      userInfo[userKey] = {
+        username: phoneNumber.value,
+        registerTime: new Date().toISOString(),
+        lastLoginTime: new Date().toISOString()
+      }
+      await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
     }
-    await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
   }
 
   // 执行登录
@@ -296,6 +382,18 @@ const handleRegister = async () => {
     error.value = '请输入用户名和密码'
     emit('notify', { message: '请输入用户名和密码', type: 'error' })
     return
+  }
+  
+  // 如果填写了手机号，必须验证
+  if (registerPhoneNumber.value) {
+    if (!/^1[3-9]\d{9}$/.test(registerPhoneNumber.value)) {
+      error.value = '请输入正确的手机号'
+      return
+    }
+    if (String(registerVerificationCode.value) !== String(registerGeneratedCode.value) || !registerGeneratedCode.value) {
+      error.value = '验证码错误或已失效'
+      return
+    }
   }
   
   // 如果选择了安全问题，必须填写答案
@@ -324,6 +422,18 @@ const handleRegister = async () => {
     registerTime: new Date().toISOString(),
     lastLoginTime: new Date().toISOString()
   }
+  
+  // 如果绑定了手机号
+  if (registerPhoneNumber.value && registerVerificationCode.value) {
+    userInfo[username.value].boundPhone = registerPhoneNumber.value
+    
+    // 创建手机号映射
+    const { value: phoneMappingData } = await Preferences.get({ key: 'phoneMapping' })
+    const phoneMapping = phoneMappingData ? JSON.parse(phoneMappingData) : {}
+    phoneMapping[registerPhoneNumber.value] = username.value
+    await Preferences.set({ key: 'phoneMapping', value: JSON.stringify(phoneMapping) })
+  }
+  
   await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
   
   // 只有设置了安全问题才保存
@@ -451,8 +561,13 @@ const resetForm = () => {
   phoneNumber.value = ''
   verificationCode.value = ''
   generatedCode.value = ''
+  registerPhoneNumber.value = ''
+  registerVerificationCode.value = ''
+  registerGeneratedCode.value = ''
   if (timer) clearInterval(timer)
+  if (registerTimer) clearInterval(registerTimer)
   countdown.value = 0
+  registerCountdown.value = 0
 }
 </script>
 
@@ -545,6 +660,13 @@ const resetForm = () => {
   border-color: #ccc;
   color: #999;
   cursor: not-allowed;
+}
+
+.sms-hint {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.2;
 }
 
 .btn-primary {

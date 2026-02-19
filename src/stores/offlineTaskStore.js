@@ -10,16 +10,24 @@ export const useOfflineTaskStore = defineStore('offlineTask', {
 
   actions: {
     async loadTasks() {
-      const { value } = await Preferences.get({ key: 'tasks' })
-      if (value) this.tasks = JSON.parse(value)
+      if (!this.currentUser) return
       
-      const { value: deleted } = await Preferences.get({ key: 'deletedTasks' })
+      // 按用户加载任务
+      const { value } = await Preferences.get({ key: `tasks_${this.currentUser}` })
+      if (value) this.tasks = JSON.parse(value)
+      else this.tasks = []
+      
+      const { value: deleted } = await Preferences.get({ key: `deletedTasks_${this.currentUser}` })
       if (deleted) this.deletedTasks = JSON.parse(deleted)
+      else this.deletedTasks = []
     },
 
     async saveTasks() {
-      await Preferences.set({ key: 'tasks', value: JSON.stringify(this.tasks) })
-      await Preferences.set({ key: 'deletedTasks', value: JSON.stringify(this.deletedTasks) })
+      if (!this.currentUser) return
+      
+      // 按用户保存任务
+      await Preferences.set({ key: `tasks_${this.currentUser}`, value: JSON.stringify(this.tasks) })
+      await Preferences.set({ key: `deletedTasks_${this.currentUser}`, value: JSON.stringify(this.deletedTasks) })
     },
 
     async addTask(taskData) {
@@ -144,6 +152,17 @@ export const useOfflineTaskStore = defineStore('offlineTask', {
         }
         return new Date(b.created_at) - new Date(a.created_at)
       })
+    },
+
+    async setCurrentUser(username) {
+      this.currentUser = username
+      await this.loadTasks()
+    },
+
+    clearUser() {
+      this.currentUser = null
+      this.tasks = []
+      this.deletedTasks = []
     }
   }
 })

@@ -1,7 +1,17 @@
 <template>
   <div class="todo-layout">
+    <!-- 下拉刷新指示器 -->
+    <div class="pull-refresh-indicator" :class="{ active: pullRefreshState !== 'idle' }">
+      <div class="refresh-icon" :class="pullRefreshState">
+        {{ pullRefreshState === 'pulling' ? '↓' : pullRefreshState === 'ready' ? '↑' : '⟳' }}
+      </div>
+      <span class="refresh-text">
+        {{ pullRefreshState === 'pulling' ? '下拉刷新' : pullRefreshState === 'ready' ? '松开刷新' : '刷新中...' }}
+      </span>
+    </div>
+
     <!-- 核心内容区 -->
-    <main class="main-content glass-card">
+    <main class="main-content glass-card" ref="mainContent">
       <!-- 顶部标题栏 -->
       <header class="header">
         <div class="user-info">
@@ -244,11 +254,76 @@
           <div class="footer-content">
             <p class="footer-version">TO-DO App v1.4.0</p>
             <p class="footer-copyright">© 2026 TO-DO App. All rights reserved.</p>
-            <p class="footer-license">MIT License | 离线存储，数据安全</p>
+            <p class="footer-license">
+              MIT License | 离线存储，数据安全 | 
+              <span class="privacy-link" @click="showPrivacyPolicy = true">隐私政策</span>
+            </p>
           </div>
         </footer>
       </div>
     </main>
+
+    <!-- 隐私政策模态框 -->
+    <div v-if="showPrivacyPolicy" class="modal-overlay" @click.self="showPrivacyPolicy = false">
+      <div class="modal-content privacy-modal">
+        <div class="modal-header">
+          <h3>🔒 隐私政策</h3>
+          <button class="close-btn" @click="showPrivacyPolicy = false">&times;</button>
+        </div>
+        <div class="modal-body privacy-content">
+          <p class="update-date"><strong>更新日期：2026年2月19日</strong></p>
+          
+          <h4>1. 概述</h4>
+          <p>TODO App（以下简称"本应用"）尊重并保护用户隐私。本隐私政策说明我们如何收集、使用和保护您的信息。</p>
+          
+          <div class="highlight-box">
+            <strong>核心承诺：</strong>本应用完全离线运行，<strong>不收集任何用户数据</strong>，所有数据仅存储在您的设备本地。
+          </div>
+          
+          <h4>2. 信息收集</h4>
+          <p>本应用完全离线运行，<strong>不收集任何用户数据</strong>。具体包括：</p>
+          <ul>
+            <li>不收集个人身份信息（姓名、邮箱、电话等）</li>
+            <li>不收集设备信息</li>
+            <li>不收集位置信息</li>
+            <li>不收集使用行为数据</li>
+            <li>不使用任何分析工具或统计服务</li>
+          </ul>
+          
+          <h4>3. 数据存储</h4>
+          <p>所有任务数据存储在您的设备本地存储中：</p>
+          <ul>
+            <li>✓ 数据存储在设备本地</li>
+            <li>✓ 数据不会上传到任何服务器</li>
+            <li>✓ 数据不会与第三方共享</li>
+            <li>✓ 卸载应用会删除所有本地数据</li>
+            <li>✓ 您完全控制自己的数据</li>
+          </ul>
+          
+          <h4>4. 权限说明</h4>
+          <p>本应用申请的权限及用途：</p>
+          <ul>
+            <li><strong>存储权限</strong>：用于保存任务数据到设备本地，以及导入导出Excel文件</li>
+            <li><strong>通知权限</strong>：用于任务提醒功能（可选，用户可在系统设置中关闭）</li>
+          </ul>
+          
+          <h4>5. 数据安全</h4>
+          <div class="highlight-box">
+            <p><strong>本应用不联网，数据完全在本地，不存在数据泄露风险。</strong></p>
+          </div>
+          
+          <h4>6. 第三方服务</h4>
+          <p>本应用<strong>不使用任何第三方服务或 SDK</strong>。</p>
+          
+          <h4>7. 联系我们</h4>
+          <div class="contact-box">
+            <p>如对本隐私政策有任何疑问，请联系：</p>
+            <p><strong>📧 邮箱：</strong>17858441076@163.com</p>
+            <p><strong>📞 电话：</strong>17858441076</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 回收站模态框 -->
     <div v-if="showTrash" class="modal-overlay" @click.self="showTrash = false">
@@ -360,6 +435,42 @@
                 >
                 <button class="btn btn-primary btn-compact" @click="updatePassword">保存</button>
               </div>
+            </div>
+          </div>
+
+          <!-- 绑定手机号 -->
+          <div class="profile-form">
+            <div class="form-group">
+              <label>📱 绑定手机号</label>
+              <div v-if="userProfileInfo.boundPhone" class="bound-phone-info">
+                <span class="phone-display">{{ userProfileInfo.boundPhone }}</span>
+                <button class="btn btn-secondary btn-compact" @click="unbindPhone">解绑</button>
+              </div>
+              <div v-else class="bind-phone-row">
+                <input 
+                  v-model="bindPhoneNumber" 
+                  type="tel" 
+                  class="input" 
+                  placeholder="手机号"
+                  maxlength="11"
+                >
+                <input 
+                  v-model="bindVerificationCode" 
+                  type="text" 
+                  class="input" 
+                  placeholder="验证码"
+                  maxlength="6"
+                >
+                <button 
+                  class="btn btn-secondary btn-compact" 
+                  :disabled="bindCountdown > 0"
+                  @click="sendBindSMS"
+                >
+                  {{ bindCountdown > 0 ? `${bindCountdown}s` : '获取' }}
+                </button>
+                <button class="btn btn-primary btn-compact" @click="confirmBindPhone">绑定</button>
+              </div>
+              <p class="bind-hint">绑定后可使用手机号+验证码登录此账号</p>
             </div>
           </div>
 
@@ -703,6 +814,7 @@ import { useOfflineTaskStore } from '../stores/offlineTaskStore'
 import { useOfflineUserStore } from '../stores/offlineUserStore'
 import { Preferences } from '@capacitor/preferences'
 import { Filesystem, Directory } from '@capacitor/filesystem'
+import { LocalNotifications } from '@capacitor/local-notifications'
 import * as XLSX from 'xlsx'
 
 const router = useRouter()
@@ -735,6 +847,7 @@ const countdownInterval = ref(null)
 const showTrash = ref(false)
 const showProfile = ref(false)
 const showPomodoroStats = ref(false)
+const showPrivacyPolicy = ref(false)
 const editingTask = ref(null)
 const editDescription = ref('')
 const editText = ref('')
@@ -747,6 +860,13 @@ const showAddForm = ref(true)
 const currentPage = ref(1)
 const pageSize = 6
 const fileInput = ref(null)
+const mainContent = ref(null)
+
+// 下拉刷新相关
+const pullRefreshState = ref('idle') // idle, pulling, ready, refreshing
+let startY = 0
+let currentY = 0
+const pullThreshold = 80
 
 // 个人主页相关
 const newUsername = ref('')
@@ -754,8 +874,16 @@ const oldPassword = ref('')
 const newPassword = ref('')
 const userProfileInfo = ref({
   registerTime: null,
-  lastLoginTime: null
+  lastLoginTime: null,
+  boundPhone: null
 })
+
+// 绑定手机号相关
+const bindPhoneNumber = ref('')
+const bindVerificationCode = ref('')
+const bindGeneratedCode = ref('')
+const bindCountdown = ref(0)
+let bindTimer = null
 
 // 获取当前用户名
 const currentUsername = computed(() => userStore.currentUser)
@@ -786,6 +914,9 @@ const categories = [
 
 // 星期几选项
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+
+// 提醒记录（防止重复提醒）
+const notifiedTasks = new Set() // 存储已提醒的任务ID
 
 // 计算属性：按分类和时间筛选的任务（不按状态筛选，用于统计）
 const baseFilteredTasks = computed(() => {
@@ -1242,11 +1373,17 @@ const getTodayDate = () => {
 // 方法：切换任务完成状态
 const toggleTaskCompletion = async (taskId) => {
   await taskStore.toggleTaskCompletion(taskId)
+  // 完成任务时清除提醒记录
+  notifiedTasks.delete(`urgent_${taskId}`)
+  notifiedTasks.delete(`overdue_${taskId}`)
 }
 
 // 方法：删除任务
 const deleteTask = async (taskId) => {
   await taskStore.deleteTask(taskId)
+  // 删除任务时清除提醒记录
+  notifiedTasks.delete(`urgent_${taskId}`)
+  notifiedTasks.delete(`overdue_${taskId}`)
   showNotification('任务已移至回收站！', 'info')
 }
 
@@ -1340,6 +1477,7 @@ const saveTaskEdit = async () => {
 // 方法：退出登录
 const handleLogout = async () => {
   await userStore.logout()
+  taskStore.clearUser()
   router.push('/')
 }
 
@@ -1446,6 +1584,102 @@ const updatePassword = async () => {
   oldPassword.value = ''
   newPassword.value = ''
   alert('密码修改成功')
+}
+
+// 方法：发送绑定手机验证码
+const sendBindSMS = async () => {
+  if (!/^1[3-9]\d{9}$/.test(bindPhoneNumber.value)) {
+    showNotification('请输入正确的手机号', 'error')
+    return
+  }
+
+  // 检查手机号是否已被其他账号绑定
+  const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+  const allUserInfo = userInfoData ? JSON.parse(userInfoData) : {}
+  
+  for (const [user, info] of Object.entries(allUserInfo)) {
+    if (info.boundPhone === bindPhoneNumber.value && user !== currentUsername.value) {
+      showNotification('该手机号已被其他账号绑定', 'error')
+      return
+    }
+  }
+
+  bindGeneratedCode.value = Math.floor(100000 + Math.random() * 900000).toString()
+  
+  const { LocalNotifications } = await import('@capacitor/local-notifications')
+  await LocalNotifications.schedule({
+    notifications: [{
+      title: '【TO-DO 绑定验证码】',
+      body: `您的绑定验证码为：${bindGeneratedCode.value}，请在5分钟内完成验证。`,
+      id: 2,
+      schedule: { at: new Date(Date.now() + 1000) }
+    }]
+  })
+
+  showNotification('验证码已发送', 'info')
+  
+  bindCountdown.value = 60
+  bindTimer = setInterval(() => {
+    bindCountdown.value--
+    if (bindCountdown.value <= 0) clearInterval(bindTimer)
+  }, 1000)
+}
+
+// 方法：确认绑定手机号
+const confirmBindPhone = async () => {
+  if (String(bindVerificationCode.value) !== String(bindGeneratedCode.value) || !bindGeneratedCode.value) {
+    showNotification('验证码错误或已失效', 'error')
+    return
+  }
+
+  const username = currentUsername.value
+  const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+  const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+  
+  if (!userInfo[username]) {
+    userInfo[username] = {}
+  }
+  
+  userInfo[username].boundPhone = bindPhoneNumber.value
+  await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
+  
+  // 创建手机号到用户名的映射
+  const { value: phoneMappingData } = await Preferences.get({ key: 'phoneMapping' })
+  const phoneMapping = phoneMappingData ? JSON.parse(phoneMappingData) : {}
+  phoneMapping[bindPhoneNumber.value] = username
+  await Preferences.set({ key: 'phoneMapping', value: JSON.stringify(phoneMapping) })
+  
+  userProfileInfo.value.boundPhone = bindPhoneNumber.value
+  bindPhoneNumber.value = ''
+  bindVerificationCode.value = ''
+  bindGeneratedCode.value = ''
+  
+  showNotification('手机号绑定成功！', 'success')
+}
+
+// 方法：解绑手机号
+const unbindPhone = async () => {
+  if (!confirm('确定要解绑手机号吗？')) return
+  
+  const username = currentUsername.value
+  const phone = userProfileInfo.value.boundPhone
+  
+  const { value: userInfoData } = await Preferences.get({ key: 'userInfo' })
+  const userInfo = userInfoData ? JSON.parse(userInfoData) : {}
+  
+  if (userInfo[username]) {
+    delete userInfo[username].boundPhone
+    await Preferences.set({ key: 'userInfo', value: JSON.stringify(userInfo) })
+  }
+  
+  // 删除手机号映射
+  const { value: phoneMappingData } = await Preferences.get({ key: 'phoneMapping' })
+  const phoneMapping = phoneMappingData ? JSON.parse(phoneMappingData) : {}
+  delete phoneMapping[phone]
+  await Preferences.set({ key: 'phoneMapping', value: JSON.stringify(phoneMapping) })
+  
+  userProfileInfo.value.boundPhone = null
+  showNotification('手机号已解绑', 'success')
 }
 
 // 方法：导出任务到Excel
@@ -1861,23 +2095,205 @@ const showNotification = (message, type = 'info') => {
 }
 
 // 生命周期钩子：组件挂载时
+// 下拉刷新方法
+const handleTouchStart = (e) => {
+  if (mainContent.value && mainContent.value.scrollTop === 0) {
+    startY = e.touches[0].clientY
+  }
+}
+
+const handleTouchMove = (e) => {
+  if (startY === 0) return
+  
+  currentY = e.touches[0].clientY
+  const diff = currentY - startY
+  
+  if (diff > 0 && mainContent.value.scrollTop === 0) {
+    e.preventDefault()
+    
+    if (diff < pullThreshold) {
+      pullRefreshState.value = 'pulling'
+    } else {
+      pullRefreshState.value = 'ready'
+    }
+  }
+}
+
+const handleTouchEnd = async () => {
+  if (pullRefreshState.value === 'ready') {
+    pullRefreshState.value = 'refreshing'
+    await refreshData()
+    setTimeout(() => {
+      pullRefreshState.value = 'idle'
+    }, 500)
+  } else {
+    pullRefreshState.value = 'idle'
+  }
+  startY = 0
+  currentY = 0
+}
+
+const refreshData = async () => {
+  await taskStore.setCurrentUser(userStore.currentUser)
+  await loadUserInfo()
+  taskStore.checkOverdueTasks()
+}
+
+// 检查并发送逾期提醒
+const checkAndNotifyDeadline = async () => {
+  const now = new Date()
+  const notifications = []
+  
+  // 幽默话术库
+  const urgentMessages = [
+    '🍅 番茄要逃跑啦！快来抓住它！',
+    '⏰ 时间在偷偷溜走，番茄也要跟着跑了！',
+    '🏃 番茄已经在打包行李了，快去完成任务！',
+    '😱 再不做，番茄就要被别人抢走了！',
+    '🚨 紧急！番茄正在倒计时，快救救它！'
+  ]
+  
+  const overdueMessages = [
+    '💔 番茄已经逃跑了...快去把它追回来！',
+    '😭 番茄伤心地离开了，赶紧去道歉吧！',
+    '🏃‍♂️ 番茄跑远了，但还来得及追！',
+    '⚠️ 番茄已出走，速度追回还有机会！',
+    '😢 番茄等累了已经走了，快去挽回！'
+  ]
+  
+  taskStore.tasks.forEach(task => {
+    if (task.status === 'completed') return
+    
+    const deadline = calculateDeadline(task)
+    if (!deadline) return
+    
+    const timeLeft = deadline - now
+    const hoursLeft = timeLeft / (1000 * 60 * 60)
+    const tomatoCount = task.priority === 'high' ? 4 : task.priority === 'medium' ? 2 : 1
+    
+    // 1小时内即将逾期的任务
+    if (hoursLeft > 0 && hoursLeft <= 1) {
+      const notifyKey = `urgent_${task.id}`
+      if (notifiedTasks.has(notifyKey)) return // 已提醒过，跳过
+      
+      const minutes = Math.floor((timeLeft / (1000 * 60)) % 60)
+      const randomMsg = urgentMessages[Math.floor(Math.random() * urgentMessages.length)]
+      notifications.push({
+        title: `⏰ ${task.text}`,
+        body: `还剩 ${minutes} 分钟！${randomMsg}\n${tomatoCount}个番茄岌岌可危 ${'🍅'.repeat(tomatoCount)}`,
+        id: task.id,
+        schedule: { at: new Date(Date.now() + 100) }
+      })
+      notifiedTasks.add(notifyKey) // 记录已提醒
+    }
+    // 已逾期但还未标记的任务
+    else if (timeLeft < 0 && task.status !== 'overdue') {
+      const notifyKey = `overdue_${task.id}`
+      if (notifiedTasks.has(notifyKey)) return // 已提醒过，跳过
+      
+      const randomMsg = overdueMessages[Math.floor(Math.random() * overdueMessages.length)]
+      notifications.push({
+        title: `❌ ${task.text}`,
+        body: `${randomMsg}\n损失 ${tomatoCount}个番茄 ${'💔'.repeat(tomatoCount)}`,
+        id: task.id + 100000,
+        schedule: { at: new Date(Date.now() + 100) }
+      })
+    }
+  })
+  
+  if (notifications.length > 0) {
+    await LocalNotifications.schedule({ notifications })
+  }
+}
+
 onMounted(async () => {
   await userStore.checkLogin()
   await loadUserInfo()
-  taskStore.loadTasks()
+  
+  // 设置任务Store的当前用户并加载该用户的任务
+  await taskStore.setCurrentUser(userStore.currentUser)
+  
+  // 请求通知权限
+  await LocalNotifications.requestPermissions()
   
   countdownInterval.value = setInterval(() => {
     taskStore.checkOverdueTasks()
-  }, 1000)
+    checkAndNotifyDeadline()
+  }, 60000) // 每分钟检查一次
+  
+  // 首次立即检查
+  checkAndNotifyDeadline()
+  
+  // 添加下拉刷新事件监听
+  if (mainContent.value) {
+    mainContent.value.addEventListener('touchstart', handleTouchStart, { passive: false })
+    mainContent.value.addEventListener('touchmove', handleTouchMove, { passive: false })
+    mainContent.value.addEventListener('touchend', handleTouchEnd)
+  }
 })
 
 // 生命周期钩子：组件卸载时
 onUnmounted(() => {
   if (countdownInterval.value) clearInterval(countdownInterval.value)
+  
+  // 移除下拉刷新事件监听
+  if (mainContent.value) {
+    mainContent.value.removeEventListener('touchstart', handleTouchStart)
+    mainContent.value.removeEventListener('touchmove', handleTouchMove)
+    mainContent.value.removeEventListener('touchend', handleTouchEnd)
+  }
 })
 </script>
 
 <style scoped>
+.pull-refresh-indicator {
+  position: fixed;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: top 0.3s ease;
+  z-index: 9999;
+}
+
+.pull-refresh-indicator.active {
+  top: 20px;
+}
+
+.refresh-icon {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.refresh-icon.pulling {
+  transform: rotate(0deg);
+}
+
+.refresh-icon.ready {
+  transform: rotate(180deg);
+}
+
+.refresh-icon.refreshing {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.refresh-text {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
 .todo-layout {
   display: flex;
   justify-content: center;
@@ -2622,6 +3038,35 @@ onUnmounted(() => {
 .btn-compact {
   padding: 0.6rem 1rem;
   white-space: nowrap;
+}
+
+.bind-phone-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bind-phone-row .input {
+  flex: 1;
+  margin: 0;
+}
+
+.bound-phone-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.phone-display {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.bind-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.75rem;
+  color: #999;
 }
 
 .profile-details {
@@ -3532,6 +3977,81 @@ onUnmounted(() => {
   font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.4);
   line-height: 1.4;
+}
+
+.privacy-link {
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.3s;
+}
+
+.privacy-link:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* 隐私政策模态框 */
+.privacy-modal {
+  background: white;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.privacy-content {
+  padding: 1.5rem;
+  line-height: 1.8;
+}
+
+.privacy-content .update-date {
+  text-align: center;
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.privacy-content h4 {
+  color: #667eea;
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #667eea;
+}
+
+.privacy-content p {
+  margin: 0.8rem 0;
+  color: #333;
+  text-align: justify;
+}
+
+.privacy-content ul {
+  margin: 0.8rem 0;
+  padding-left: 2rem;
+}
+
+.privacy-content li {
+  margin: 0.5rem 0;
+  color: #555;
+}
+
+.highlight-box {
+  background: #f0f4ff;
+  padding: 1rem;
+  border-left: 4px solid #667eea;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+.contact-box {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.contact-box p {
+  margin: 0.5rem 0;
 }
 
 /* 编辑模态框周期选择器 */
