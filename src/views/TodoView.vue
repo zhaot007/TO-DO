@@ -1342,17 +1342,18 @@ onUnmounted(() => {
 .filter-row-unified {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   width: 100%;
   margin-top: 0.4rem;
   flex-wrap: nowrap;
 }
 
 .filter-row-unified .stat-row {
-  flex: 1;
+  flex: 0.8;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.2rem 0.2rem;
 }
 
 /* 搜索框 */
@@ -1410,7 +1411,7 @@ onUnmounted(() => {
   gap: 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
-  flex: 2.2; /* 给日期区间更多空间 */
+  flex: 2.5;
   position: relative;
   overflow: hidden;
 }
