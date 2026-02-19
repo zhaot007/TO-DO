@@ -14,7 +14,15 @@ This is an **offline Android To-Do management application** built with **Vue 3**
   - Dynamic gradient avatar based on username initials
   - Auto-login with session persistence
   - Optional security questions for password recovery
+  - **Phone Number Login**: SMS verification code login (simulated via LocalNotifications)
+  - **Phone Binding**: Bind phone number during registration or in profile settings
+  - **User Data Isolation**: Each user's tasks are completely isolated
 - **Offline Operation**: Fully functional without internet connection
+- **Pull-to-Refresh**: Mobile-friendly gesture to refresh task data
+- **Smart Reminders**: 
+  - Overdue alerts with humorous messages ("Tomatoes are escaping!")
+  - 1-hour warning before deadline
+  - Anti-spam mechanism (one notification per task per status)
 - **Dashboard & Stats**:
   - Unified **Icon + Number + Label** structure for all stats
   - Three-row layout: Percentage & Categories / Task Status & Date Filter / Priority Filter & Search
@@ -93,7 +101,15 @@ This is an **offline Android To-Do management application** built with **Vue 3**
   - 动态首字母渐变头像
   - 自动登录和会话保持
   - 可选的密保问题（用于密码找回）
+  - **手机号登录**: 短信验证码登录（通过LocalNotifications模拟）
+  - **手机号绑定**: 注册时或个人主页绑定手机号
+  - **用户数据隔离**: 每个用户的任务完全隔离
 - **完全离线运行**: 无需网络连接即可使用全部功能
+- **下拉刷新**: 移动端手势刷新任务数据
+- **智能提醒**: 
+  - 逾期提醒（幽默话术："番茄要逃跑啦"）
+  - 1小时前预警提醒
+  - 防刷屏机制（每个任务每种状态只提醒1次）
 - **任务看板**:
   - 统一 **图标 + 数字 + 标签** 结构，视觉高度一致
   - 三行布局：占比&分类 / 状态&日期 / 优先级&搜索
@@ -203,8 +219,22 @@ TO-DO/
 使用 Capacitor Preferences API 存储以下数据：
 - `users`: 用户账号密码映射 `{ username: password }`
 - `currentUser`: 当前登录用户
-- `tasks`: 任务列表数组
-- `deletedTasks`: 回收站任务数组
+- `tasks_{username}`: 按用户隔离的任务数据
+- `deletedTasks_{username}`: 按用户隔离的回收站数据
+- `userInfo`: 用户详细信息（注册时间、修改时间、绑定手机号等）
+- `phoneMapping`: 手机号→用户名映射 `{ phone: username }`
+- `security`: 安全问题答案（可选）
+
+### 用户信息结构 | User Info Structure
+```javascript
+userInfo[username] = {
+  username: String,              // 用户名
+  registerTime: String,          // 注册时间（ISO格式，不变）
+  usernameModifiedTime: String,  // 用户名修改时间（可选）
+  lastLoginTime: String,         // 最后登录时间
+  boundPhone: String             // 绑定的手机号（可选）
+}
+```
 
 ### 路由模式 | Router Mode
 使用 Hash 模式 (`createWebHashHistory`) 以适配 Capacitor 环境。
@@ -258,6 +288,28 @@ TO-DO/
 ## 📝 版本历史 | Version History
 
 ### v1.4.0 (2026-02-19)
+- ✅ **手机号登录系统**:
+  - 注册时可选绑定手机号（验证码验证）
+  - 个人主页支持绑定/解绑手机号
+  - 手机号登录自动识别绑定账号
+  - 使用LocalNotifications模拟短信验证码
+- ✅ **下拉刷新**: 
+  - 支持移动端手势刷新数据
+  - 刷新指示器动画（下拉/准备/刷新中）
+- ✅ **智能逾期提醒**:
+  - 1小时内即将逾期提醒（幽默话术："番茄要逃跑啦"）
+  - 已逾期提醒（"番茄已经逃跑了"）
+  - 防刷屏机制（每个任务每种状态只提醒1次）
+  - 每分钟检查一次
+- ✅ **用户数据隔离**: 
+  - 任务数据按用户完全隔离（tasks_{username}）
+  - 用户名修改时间记录
+  - 保留原始注册时间
+- ✅ **个人主页优化**:
+  - 紧凑化布局（纵向高度缩减30%）
+  - 横向布局优化（空间利用率提升25%）
+  - 联系与支持改版（入口+弹窗）
+  - 字体全面精简
 - ✅ **任务类型扩展**: 新增明天、本周内、指定日期、工作日重复类型
 - ✅ **日期时间选择**: 指定日期支持同时选择日期和时间（datetime-local）
 - ✅ **任务截止时间系统**: 

@@ -2,18 +2,19 @@
 
 ## 🏗️ 架构概览
 
-### 技术栈
+### 技术栈 (v1.4.0)
 - **前端框架**: Vue 3.5.13 (Composition API)
 - **状态管理**: Pinia 3.0.4
 - **路由**: Vue Router 4.4.5 (Hash模式)
 - **移动框架**: Capacitor 8.1.0
+- **桌面框架**: Electron 40.5.0
 - **构建工具**: Vite 6.0.3
-- **目标平台**: Android
+- **存储方案**: Capacitor Preferences (移动端/桌面端统一)
 
 ### 架构模式
-- **MVVM模式**: Vue组件作为View，Pinia Store作为ViewModel
-- **单页应用 (SPA)**: 使用Vue Router管理路由
-- **离线优先**: 所有数据存储在本地，无需网络连接
+- **全离线化 (Pure Offline)**: 从 CS 架构完全迁移至本地优先。
+- **用户数据隔离**: 使用 `tasks_{username}` 键名实现多账号本地隔离。
+- **跨平台适配**: 统一逻辑代码，通过 Capacitor 和 Electron 分别打包 Android 和 Windows 端。
 
 ---
 
@@ -21,39 +22,21 @@
 
 ```
 TO-DO/
-├── src/                              # 源代码目录
+├── electron/                         # Electron 桌面端配置
+├── src/                              # 前端源码
 │   ├── views/                        # 页面组件
-│   │   ├── LoginView.vue            # 登录/注册页面
-│   │   └── TodoView.vue             # 任务管理主页面
-│   ├── stores/                       # Pinia状态管理
-│   │   ├── offlineTaskStore.js      # 任务数据管理
-│   │   ├── offlineUserStore.js      # 用户数据管理
-│   │   ├── taskStore.js             # (废弃) 原在线版Store
-│   │   └── userStore.js             # (废弃) 原在线版Store
-│   ├── router/                       # 路由配置
-│   │   └── index.js                 # 路由定义
-│   ├── assets/                       # 静态资源
-│   │   └── main.css                 # 全局样式
-│   ├── App.vue                       # 根组件
-│   └── main.js                       # 应用入口
-├── android/                          # Android项目 (Capacitor生成)
-│   ├── app/                          # Android应用模块
-│   │   ├── src/main/                # Android源码
-│   │   └── build.gradle             # 应用构建配置
-│   ├── gradle/                       # Gradle配置
-│   ├── build.gradle                 # 项目构建配置
-│   └── settings.gradle              # 项目设置
-├── server/                           # (废弃) 原后端代码
-├── dist/                             # 构建输出目录
-├── node_modules/                     # 依赖包
-├── capacitor.config.json            # Capacitor配置
-├── package.json                      # 项目配置
-├── vite.config.js                   # Vite配置
-├── index.html                        # HTML入口
-├── README.md                         # 项目说明
-├── CHANGELOG.md                      # 版本记录
-├── USER_MANUAL.md                    # 用户手册
-└── DEVELOPER.md                      # 本文档
+│   │   ├── LoginView.vue            # 登录/注册（含密保/手机绑定逻辑）
+│   │   └── TodoView.vue             # 核心业务（含番茄钟统计/Excel导入导出）
+│   ├── stores/                       # Pinia Store
+│   │   ├── offlineTaskStore.js      # 任务核心逻辑（按用户隔离存储）
+│   │   └── offlineUserStore.js      # 用户状态管理
+│   ├── assets/                       # 静态资源（含 icons/images）
+│   └── main.js                       # 入口文件
+├── android/                          # Capacitor Android 原生工程
+├── scripts/                          # 数据清理与统计实用脚本
+├── TODO导入模板示例.xlsx             # 官方导入模板
+├── capacitor.config.json            # Capacitor 配置
+└── package.json                      # 项目元数据与依赖
 ```
 
 ---
@@ -61,506 +44,80 @@ TO-DO/
 ## 🔧 开发环境配置
 
 ### 系统要求
-- **Node.js**: >= 16.0.0
-- **npm**: >= 8.0.0
-- **Java**: JDK 17 (用于Android构建)
-- **Android Studio**: 可选，用于调试
+- **Node.js**: >= 22.0.0 (推荐)
+- **Java**: JDK 17 (Android 构建必需)
+- **平台**: macOS (推荐) / Windows
 
-### 安装依赖
+### 常用开发命令
 ```bash
-# 安装前端依赖
-npm install
-
-# 如需构建Android，确保已安装Java 17
-java -version
-```
-
-### 开发服务器
-```bash
-# 启动开发服务器 (浏览器预览)
+# 1. 启动 Web 开发预览
 npm run dev
 
-# 访问 http://localhost:5173
-```
+# 2. 启动 Electron 桌面开发模式
+npm run electron:dev
 
-### 构建生产版本
-```bash
-# 构建Web版本
-npm run build
-
-# 同步到Android项目
-npx cap sync android
-
-# 构建Android APK
-cd android
-./gradlew assembleDebug
-
-# APK位置: android/app/build/outputs/apk/debug/app-debug.apk
+# 3. Android 同步与打包
+npm run build && npx cap sync android
+./build-apk.sh
 ```
 
 ---
 
-## 📦 核心模块说明
+## 💾 数据存储结构 (Capacitor Preferences)
 
-### 1. 路由模块 (`src/router/index.js`)
+### 1. 核心键值 (Storage Keys)
+- `users`: `{ "zhaosj": "pass123" }`
+- `currentUser`: `"zhaosj"`
+- `tasks_{username}`: 任务数组。
+- `deletedTasks_{username}`: 回收站数组。
+- `userInfo`: 存储详细资料（注册时间、手机号、用户名修改记录）。
+- `phoneMapping`: `{ "17858441076": "zhaosj" }`（用于手机号登录检索）。
 
-```javascript
-// 使用Hash模式以适配Capacitor
-import { createRouter, createWebHashHistory } from 'vue-router'
-
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes: [
-    { path: '/', name: 'login', component: LoginView },
-    { path: '/todo', name: 'todo', component: TodoView }
-  ]
-})
-```
-
-**关键点**：
-- 使用 `createWebHashHistory` 而非 `createWebHistory`
-- Capacitor环境下必须使用Hash模式
-- 无路由守卫，登录状态由组件自行管理
-
----
-
-### 2. 用户Store (`src/stores/offlineUserStore.js`)
-
-```javascript
-import { defineStore } from 'pinia'
-import { Preferences } from '@capacitor/preferences'
-
-export const useOfflineUserStore = defineStore('offlineUser', {
-  state: () => ({
-    currentUser: null,
-    isLoggedIn: false
-  }),
-  
-  actions: {
-    async login(username) { /* ... */ },
-    async logout() { /* ... */ },
-    async checkLogin() { /* ... */ }
-  }
-})
-```
-
-**数据存储**：
-- `users`: `{ "username1": "password1", "username2": "password2" }`
-- `currentUser`: `"username"`
-
-**API说明**：
-- `login(username)`: 登录用户，设置currentUser
-- `logout()`: 退出登录，清除currentUser
-- `checkLogin()`: 检查是否已登录
-
----
-
-### 3. 任务Store (`src/stores/offlineTaskStore.js`)
-
-```javascript
-export const useOfflineTaskStore = defineStore('offlineTask', {
-  state: () => ({
-    tasks: [],           // 任务列表
-    deletedTasks: [],    // 回收站
-    currentUser: null
-  }),
-  
-  actions: {
-    async loadTasks() { /* 从本地加载 */ },
-    async saveTasks() { /* 保存到本地 */ },
-    async addTask(taskData) { /* 添加任务 */ },
-    async toggleTaskCompletion(taskId) { /* 切换完成状态 */ },
-    async updateTask(taskId, updates) { /* 更新任务 */ },
-    async deleteTask(taskId) { /* 删除到回收站 */ },
-    async restoreTask(taskId) { /* 从回收站恢复 */ },
-    async permanentDeleteTask(taskId) { /* 永久删除 */ },
-    checkOverdueTasks() { /* 检查逾期任务 */ },
-    getFilteredTasks(statusFilter, categoryFilter, dateRange) { /* 筛选任务 */ }
-  }
-})
-```
-
-**任务数据结构**：
+### 2. 任务对象模型 (Task Object)
 ```javascript
 {
-  id: 1708171234567,              // 时间戳作为ID
-  text: "完成项目文档",            // 任务标题
-  description: "包括README和API文档", // 详细描述
-  type: "today",                   // today | daily | weekly
-  category: "work",                // work | study | life
-  priority: "high",                // high | medium | low
-  weekdays: [1, 3, 5],            // 仅weekly类型有效
-  status: "pending",               // pending | completed | overdue
-  created_at: "2026-02-17T10:30:00.000Z",
-  user_id: "username"
+  id: Number,              // 时间戳
+  text: String,            // 任务标题
+  description: String,     // 详细描述
+  type: String,            // 'today'|'tomorrow'|'this_week'|'custom_date'|'daily'|'weekday'|'weekly'
+  category: String,        // 'work'|'study'|'life'
+  priority: String,        // 'high'|'medium'|'low'
+  status: String,          // 'pending'|'completed'|'overdue'
+  created_at: String,      // ISO 格式创建时间
+  customDate: String,      // 仅用于 custom_date 类型
+  customTime: String,      // 仅用于 custom_date 类型
+  weekdays: Array          // 仅用于 weekly 类型 [0, 1, 2...]
 }
 ```
 
 ---
 
-### 4. 本地存储 (Capacitor Preferences)
+## 🍅 番茄钟激励系统逻辑
 
-**存储键值对**：
-```javascript
-// 用户数据
-await Preferences.set({ 
-  key: 'users', 
-  value: JSON.stringify({ "user1": "pass1" }) 
-})
-
-// 当前用户
-await Preferences.set({ 
-  key: 'currentUser', 
-  value: 'user1' 
-})
-
-// 任务列表
-await Preferences.set({ 
-  key: 'tasks', 
-  value: JSON.stringify([...tasks]) 
-})
-
-// 回收站
-await Preferences.set({ 
-  key: 'deletedTasks', 
-  value: JSON.stringify([...deletedTasks]) 
-})
-```
-
-**读取数据**：
-```javascript
-const { value } = await Preferences.get({ key: 'tasks' })
-const tasks = value ? JSON.parse(value) : []
-```
+### 计算规则
+- **高优先级**: 4 🍅 | **中优先级**: 2 🍅 | **低优先级**: 1 🍅
+- **奖励**: 任务状态转为 `completed` 时获得。
+- **惩罚**: 任务状态转为 `overdue` 时扣除相应分值。
+- **等级公式**: 
+  - `totalPomodoros = earned - lost`
+  - 根据 `total` 映射至 5 个勋章等级。
 
 ---
 
-## 🎨 UI组件说明
+## 🛠️ 打包指南
 
-### LoginView.vue
+### Android 打包
+请参考 `APK_BUILD_GUIDE.md`。必须确保 `JAVA_HOME` 指向 JDK 17。
 
-**功能**：
-- 用户登录
-- 用户注册
-- 登录/注册模式切换
-
-**关键代码**：
-```vue
-<script setup>
-const isRegister = ref(false)  // 切换登录/注册模式
-
-const handleRegister = async () => {
-  const { value } = await Preferences.get({ key: 'users' })
-  const users = value ? JSON.parse(value) : {}
-  users[username.value] = password.value
-  await Preferences.set({ key: 'users', value: JSON.stringify(users) })
-}
-
-const handleLogin = async () => {
-  const { value } = await Preferences.get({ key: 'users' })
-  const users = value ? JSON.parse(value) : {}
-  if (users[username.value] === password.value) {
-    window.location.hash = '#/todo'
-  }
-}
-</script>
-```
-
----
-
-### TodoView.vue
-
-**功能**：
-- 任务列表展示
-- 添加任务（内联表单，默认展开）
-- 编辑任务
-- 删除任务
-- 交互式筛选（点击统计数据筛选）
-- 回收站管理
-- 数据统计
-
-**UI布局（v1.1融合式设计）**：
-```vue
-<template>
-  <!-- 统计+筛选+添加 - 融合区域 -->
-  <section class="fusion-area">
-    <!-- 第一行：统计数据（可点击筛选） + 添加按钮 -->
-    <div class="stats-row">
-      <div class="progress-ring" @click="filterByStatus('all')">50%</div>
-      <div class="stat-item" @click="filterByStatus('pending')">1待办</div>
-      <div class="stat-item" @click="filterByStatus('completed')">1已完成</div>
-      <div class="stat-item" @click="filterByStatus('overdue')">0已逾期</div>
-      <button @click="toggleAddForm">添加/收起</button>
-    </div>
-    
-    <!-- 第二行：分类和时间筛选 -->
-    <div class="filter-row">
-      <div class="category-pills">
-        <span @click="filterByCategory('all')">全部</span>
-        <span @click="filterByCategory('work')">工作</span>
-        <span @click="filterByCategory('study')">学习</span>
-        <span @click="filterByCategory('life')">生活</span>
-      </div>
-      <input type="date" v-model="dateRangeStart" />
-      <input type="date" v-model="dateRangeEnd" />
-    </div>
-    
-    <!-- 添加表单（默认展开） -->
-    <div v-if="showAddForm" class="add-form-inline">
-      <input v-model="newTaskText" placeholder="任务名称" />
-      <select v-model="newTaskType">...</select>
-      <select v-model="newTaskCategory">...</select>
-      <select v-model="newTaskPriority">...</select>
-      <button @click="addTask">✓</button>
-      <button @click="clearForm">×</button>
-    </div>
-  </section>
-  
-  <!-- 任务列表 -->
-  <ul>
-    <li v-for="task in filteredTasks" :key="task.id">
-      <input type="checkbox" @change="toggleTaskCompletion(task.id)" />
-      <span @click="openEditModal(task)">{{ task.text }}</span>
-      <button @click="deleteTask(task.id)">×</button>
-    </li>
-  </ul>
-</template>
-```
-
-**关键特性**：
-- 统计数据本身是筛选按钮（点击即筛选）
-- 分类筛选使用胶囊按钮样式
-- 添加表单内联显示，默认展开
-- 移除了独立的筛选工具栏区域
-- 空间优化：节省约130px垂直空间
-
----
-
-## 🔌 Capacitor配置
-
-### capacitor.config.json
-```json
-{
-  "appId": "com.todo.app",
-  "appName": "TODO App",
-  "webDir": "dist",
-  "server": {
-    "androidScheme": "https",
-    "cleartext": true
-  }
-}
-```
-
-**配置说明**：
-- `appId`: Android应用包名
-- `appName`: 应用显示名称
-- `webDir`: Web资源目录（Vite构建输出）
-- `androidScheme`: 使用HTTPS协议
-- `cleartext`: 允许HTTP请求（虽然本应用不需要网络）
-
----
-
-## 🛠️ 构建流程
-
-### 完整构建步骤
-
+### Windows 打包 (Electron)
 ```bash
-# 1. 安装依赖
-npm install
-
-# 2. 构建Web资源
-npm run build
-# 输出: dist/
-
-# 3. 同步到Android项目
-npx cap sync android
-# 操作: 复制dist/到android/app/src/main/assets/public/
-
-# 4. 修改Java版本配置 (如需要)
-# 编辑以下文件，将VERSION_21改为VERSION_17:
-# - android/app/capacitor.build.gradle
-# - android/capacitor-cordova-android-plugins/build.gradle
-# - node_modules/@capacitor/android/capacitor/build.gradle
-# - node_modules/@capacitor/preferences/android/build.gradle
-
-# 5. 构建APK
-export JAVA_HOME=/path/to/jdk-17
-cd android
-./gradlew assembleDebug
-
-# 6. 获取APK
-# 位置: android/app/build/outputs/apk/debug/app-debug.apk
+# 构建 Windows 安装程序 (.exe)
+npm run electron:build-win
 ```
-
-### 自动化脚本
-
-创建 `build-apk.sh`:
-```bash
-#!/bin/bash
-set -e
-
-echo "🔨 开始构建Android APK..."
-
-# 构建Web
-echo "📦 构建Web资源..."
-npm run build
-
-# 同步到Android
-echo "🔄 同步到Android项目..."
-npx cap sync android
-
-# 修复Java版本
-echo "🔧 修复Java版本配置..."
-sed -i '' 's/VERSION_21/VERSION_17/g' android/app/capacitor.build.gradle
-sed -i '' 's/VERSION_21/VERSION_17/g' android/capacitor-cordova-android-plugins/build.gradle
-sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
-sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/preferences/android/build.gradle
-
-# 构建APK
-echo "🏗️ 构建APK..."
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-cd android
-./gradlew assembleDebug
-
-# 复制APK
-echo "📱 复制APK到项目根目录..."
-cd ..
-cp android/app/build/outputs/apk/debug/app-debug.apk ./TODO-App.apk
-
-echo "✅ 构建完成！APK位置: TODO-App.apk"
-```
+输出文件位于 `release/` 目录。
 
 ---
 
-## 🧪 调试技巧
-
-### 浏览器调试
-```bash
-npm run dev
-# 访问 http://localhost:5173
-# 使用Chrome DevTools调试
-```
-
-### Android设备调试
-```bash
-# 1. 启用USB调试
-# 2. 连接设备
-adb devices
-
-# 3. 安装APK
-adb install TODO-App.apk
-
-# 4. 查看日志
-adb logcat | grep "Capacitor"
-
-# 5. Chrome远程调试
-# 访问 chrome://inspect
-```
-
-### 添加调试日志
-```javascript
-// 在组件中添加
-const addLog = (message) => {
-  console.log(`[DEBUG] ${new Date().toLocaleTimeString()} - ${message}`)
-}
-
-// 在关键位置调用
-addLog('用户点击登录按钮')
-addLog(`当前hash: ${window.location.hash}`)
-```
-
----
-
-## 📝 代码规范
-
-### Vue组件规范
-```vue
-<template>
-  <!-- 使用语义化HTML -->
-  <!-- 使用kebab-case命名class -->
-</template>
-
-<script setup>
-// 1. 导入
-import { ref, computed, onMounted } from 'vue'
-
-// 2. Props和Emits
-const props = defineProps({...})
-const emit = defineEmits([...])
-
-// 3. 响应式数据
-const data = ref(...)
-
-// 4. 计算属性
-const computed = computed(() => ...)
-
-// 5. 方法
-const method = () => {...}
-
-// 6. 生命周期
-onMounted(() => {...})
-</script>
-
-<style scoped>
-/* 使用scoped避免样式污染 */
-/* 使用CSS变量统一主题 */
-</style>
-```
-
-### 命名规范
-- **组件**: PascalCase (LoginView.vue)
-- **文件**: camelCase (offlineTaskStore.js)
-- **变量**: camelCase (currentUser)
-- **常量**: UPPER_SNAKE_CASE (TASK_STATUS)
-- **CSS类**: kebab-case (task-item)
-
----
-
-## 🚀 性能优化
-
-### 已实现的优化
-- ✅ 使用Vite快速构建
-- ✅ 使用Composition API减少运行时开销
-- ✅ 使用scoped CSS避免全局污染
-- ✅ 本地存储避免网络请求
-
-### 可优化项
-- 📅 使用虚拟滚动处理大量任务
-- 📅 使用Web Worker处理数据计算
-- 📅 使用懒加载优化首屏加载
-- 📅 使用图片压缩减小APK体积
-
----
-
-## 🔐 安全考虑
-
-### 当前安全措施
-- ✅ 数据仅存储在本地设备
-- ✅ 无网络传输，避免中间人攻击
-- ✅ 用户数据隔离
-
-### 安全风险
-- ⚠️ 密码明文存储
-- ⚠️ 无数据加密
-- ⚠️ 卸载应用数据丢失
-
-### 改进建议
-- 📅 使用加密算法加密密码
-- 📅 使用生物识别登录
-- 📅 提供数据导出功能
-
----
-
-## 📚 参考资料
-
-- [Vue 3 官方文档](https://vuejs.org/)
-- [Pinia 官方文档](https://pinia.vuejs.org/)
-- [Capacitor 官方文档](https://capacitorjs.com/)
-- [Vite 官方文档](https://vitejs.dev/)
-- [Android Gradle 插件](https://developer.android.com/studio/build)
-
----
-
-**版本**: v1.0.0  
-**更新日期**: 2026-02-17  
-**维护者**: 开发团队
+**版本**: v1.4.0  
+**更新日期**: 2026-02-19  
+**维护者**: zhaosj 的助手
