@@ -21,7 +21,8 @@ This is an **offline Android To-Do management application** built with **Vue 3**
 - **Data Import/Export**: 
   - Export tasks to Excel for backup.
   - Import tasks from Excel in batch (supports task status, priority, category, creation time, etc.).
-  - Download import template: [TODO导入模板示例.xlsx](./TODO导入模板示例.xlsx) (100 sample tasks for testing).
+  - Download import template directly in app or from repository: [TODO导入模板示例.xlsx](./TODO导入模板示例.xlsx) (100 sample tasks for testing).
+  - Three-button data management: Export, Import, and Download Template.
 - **Soft Delete (Recycle Bin)**: 
   - Deleted tasks are moved to the trash first.
   - Supports restoring or permanent deletion from the trash.
@@ -141,8 +142,12 @@ TO-DO/
 │   ├── App.vue                   # 根组件 | Root component
 │   └── main.js                   # 入口文件 | Entry file
 ├── android/                      # Android项目目录 | Android project
+├── scripts/                      # 实用脚本 | Utility scripts
+│   ├── 清理本地数据.js          # 清空任务数据 | Clear local data
+│   └── 统计任务数据.js          # 统计任务信息 | Task statistics
 ├── server/                       # 已废弃的后端代码 | Deprecated backend code
 ├── capacitor.config.json         # Capacitor配置 | Capacitor config
+├── TODO导入模板示例.xlsx        # 官方导入模板 | Official import template
 ├── TODO-App.apk                  # Android安装包 | Android APK
 ├── package.json                  # 项目依赖 | Project dependencies
 ├── vite.config.js               # Vite配置 | Vite config
@@ -207,13 +212,17 @@ TO-DO/
 
 ## 📝 版本历史 | Version History
 
-### v1.3.0 (2026-02-18)
+### v1.3.0 (2026-02-19)
 - ✅ 新增任务批量导入功能
 - ✅ 支持从Excel导入任务（任务名称、描述、分类、优先级、类型、状态、创建时间）
-- ✅ 数据管理区域整合（导出+导入）
+- ✅ 数据管理区域新增"下载模板"按钮（三按钮布局）
+- ✅ 提供官方导入模板（100条示例任务，时间范围2026-01-01至2026-02-25）
 - ✅ 智能解析Excel数据格式
 - ✅ 导入结果统计（成功/失败数量）
-- 📄 新增导入模板说明文档
+- 🐛 修复addTask方法保留导入数据完整字段
+- 🐛 修复待办统计逻辑，避免与已逾期重复计数
+- 📄 新增导入模板使用说明文档
+- 🛠️ 新增清理数据和统计数据脚本
 
 ### v1.2.1 (2026-02-18)
 - 🐛 修复小屏手机上统计数字被截断的问题
