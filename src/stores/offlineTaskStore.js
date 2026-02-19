@@ -30,6 +30,8 @@ export const useOfflineTaskStore = defineStore('offlineTask', {
         category: taskData.category,
         priority: taskData.priority,
         weekdays: taskData.weekdays || [],
+        customDate: taskData.customDate || null,
+        customTime: taskData.customTime || null,
         description: taskData.description || '',
         status: taskData.status || 'pending',
         created_at: taskData.created_at || new Date().toISOString(),

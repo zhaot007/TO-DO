@@ -195,7 +195,8 @@
               <span class="task-title" @click="openEditModal(task)" title="点击编辑详情">{{ task.text }}</span>
               <div v-if="task.description" class="task-description">{{ task.description }}</div>
               <div class="task-meta">
-                <span class="task-time">🕒 {{ formatDateTime(task.created_at) }}</span>
+                <span class="task-time" title="添加时间">📝 {{ formatDateTime(task.created_at) }}</span>
+                <span class="task-deadline" :class="getDeadlineClass(task)" title="计划完成时间">⏰ {{ getDeadlineText(task) }}</span>
                 <span class="task-type badge">{{ getTaskTypeText(task) }}</span>
                 <span class="badge badge-icon" :class="`priority-${task.priority}`" :title="`优先级: ${getPriorityText(task.priority)}`">
                   ⚡ {{ getPriorityText(task.priority) }}
@@ -203,12 +204,8 @@
                 <span class="badge badge-icon" :class="`category-${task.category}`" :title="`分类: ${getCategoryText(task.category)}`">
                   🏷️ {{ getCategoryText(task.category) }}
                 </span>
-                <span 
-                  v-if="task.type === 'today' && task.status !== TaskStatus.COMPLETED" 
-                  class="task-countdown"
-                  :class="getCountdownClass(task)"
-                >
-                  {{ getCountdown(task) }}
+                <span class="badge badge-pomodoro" :class="`pomodoro-${task.priority}`" :title="`预估番茄数: ${getPomodoroCount(task.priority)}个`">
+                  🍅 x {{ getPomodoroCount(task.priority) }}
                 </span>
               </div>
             </div>
@@ -320,6 +317,41 @@
             <div class="stat-item">
               <div class="stat-value">{{ completionRate }}%</div>
               <div class="stat-label">完成率</div>
+            </div>
+          </div>
+
+          <!-- 番茄统计 -->
+          <div class="pomodoro-stats">
+            <h4 class="stats-title">🍅 番茄统计</h4>
+            <div class="pomodoro-grid">
+              <div class="pomodoro-item earned">
+                <div class="pomodoro-icon">✅</div>
+                <div class="pomodoro-info">
+                  <div class="pomodoro-count">{{ earnedPomodoros }}</div>
+                  <div class="pomodoro-label">已获得番茄</div>
+                </div>
+              </div>
+              <div class="pomodoro-item pending">
+                <div class="pomodoro-icon">⏳</div>
+                <div class="pomodoro-info">
+                  <div class="pomodoro-count">{{ pendingPomodoros }}</div>
+                  <div class="pomodoro-label">待获得番茄</div>
+                </div>
+              </div>
+              <div class="pomodoro-item lost">
+                <div class="pomodoro-icon">❌</div>
+                <div class="pomodoro-info">
+                  <div class="pomodoro-count">-{{ lostPomodoros }}</div>
+                  <div class="pomodoro-label">逾期扣除</div>
+                </div>
+              </div>
+              <div class="pomodoro-item total">
+                <div class="pomodoro-icon">🏆</div>
+                <div class="pomodoro-info">
+                  <div class="pomodoro-count">{{ totalPomodoros }}</div>
+                  <div class="pomodoro-label">净获得番茄</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -638,6 +670,33 @@ const usageDays = computed(() => {
   const diffTime = Math.abs(today - registerDate)
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   return diffDays
+})
+
+// 番茄统计
+const earnedPomodoros = computed(() => {
+  // 已完成任务获得的番茄数
+  return taskStore.tasks
+    .filter(t => t.status === TaskStatus.COMPLETED)
+    .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+})
+
+const pendingPomodoros = computed(() => {
+  // 待完成任务可获得的番茄数
+  return taskStore.tasks
+    .filter(t => t.status === TaskStatus.PENDING)
+    .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+})
+
+const lostPomodoros = computed(() => {
+  // 逾期任务扣除的番茄数
+  return taskStore.tasks
+    .filter(t => t.status === TaskStatus.OVERDUE)
+    .reduce((sum, t) => sum + getPomodoroCount(t.priority), 0)
+})
+
+const totalPomodoros = computed(() => {
+  // 净获得番茄数 = 已获得 - 逾期扣除
+  return earnedPomodoros.value - lostPomodoros.value
 })
 
 // 计算属性：总页数
@@ -1098,49 +1157,39 @@ const exportToExcel = async () => {
 
 // 方法：获取任务类型文本
 const getTaskTypeText = (task) => {
-  let typeText = ''
   switch (task.type) {
     case 'today':
-      typeText = '今天'
-      break
+      return '今天'
     case 'tomorrow':
-      typeText = '明天'
-      break
+      return '明天'
     case 'this_week':
-      typeText = '本周内'
-      break
+      return '本周内'
     case 'custom_date':
       if (task.customDate) {
         const date = new Date(task.customDate)
-        typeText = `${date.getMonth() + 1}/${date.getDate()}`
-      } else {
-        typeText = '指定日期'
+        const month = date.getMonth() + 1
+        const day = date.getDate()
+        let text = `${month}/${day}`
+        // 如果有具体时间，也显示时间
+        if (task.customTime) {
+          text += ` ${task.customTime}`
+        }
+        return text
       }
-      break
+      return '指定日期'
     case 'daily':
-      typeText = '每天'
-      break
+      return '每天'
     case 'weekday':
-      typeText = '工作日'
-      break
+      return '工作日'
     case 'weekly':
       if (task.weekdays) {
         const selectedDays = task.weekdays.map(day => weekdays[day]).join(',')
-        typeText = `每周${selectedDays}`
-      } else {
-        typeText = '每周'
+        return `每周${selectedDays}`
       }
-      break
+      return '每周'
     default:
-      typeText = ''
+      return ''
   }
-  
-  // 添加时间信息
-  if (task.customTime) {
-    typeText += ` ${task.customTime}`
-  }
-  
-  return typeText
 }
 
 // 方法：获取优先级文本
@@ -1151,6 +1200,16 @@ const getPriorityText = (priority) => {
     low: '低'
   }
   return priorityMap[priority] || priority
+}
+
+// 方法：获取番茄数（根据优先级）
+const getPomodoroCount = (priority) => {
+  const pomodoroMap = {
+    high: 4,
+    medium: 2,
+    low: 1
+  }
+  return pomodoroMap[priority] || 2
 }
 
 // 方法：获取分类文本
@@ -1328,35 +1387,106 @@ const formatDateTime = (dateStr) => {
   return `${year}/${month}/${day} ${hour}:${minute}`
 }
 
-// 方法：获取倒计时
-const getCountdown = (task) => {
-  const now = new Date()
-  const created = new Date(task.created_at)
-  const endOfDay = new Date(created.getFullYear(), created.getMonth(), created.getDate(), 23, 59, 59)
-  const remainingTime = endOfDay - now
+// 方法：获取任务截止时间文本
+const getDeadlineText = (task) => {
+  const deadline = calculateDeadline(task)
+  if (!deadline) return '无截止'
   
-  if (remainingTime > 0) {
-    const hours = Math.floor(remainingTime / (1000 * 60 * 60))
-    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60))
-    return `剩余: ${hours}h ${minutes}m`
+  const now = new Date()
+  const diff = deadline - now
+  
+  if (diff < 0) {
+    // 已逾期
+    const hours = Math.floor(Math.abs(diff) / (1000 * 60 * 60))
+    const days = Math.floor(hours / 24)
+    if (days > 0) return `逾期${days}天`
+    return `逾期${hours}小时`
   } else {
-    const overdueTime = Math.abs(remainingTime)
-    const hours = Math.floor(overdueTime / (1000 * 60 * 60))
-    const minutes = Math.floor((overdueTime % (1000 * 60 * 60)) / (1000 * 60))
-    return `逾期: ${hours}h ${minutes}m`
+    // 未逾期
+    const date = new Date(deadline)
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const hour = String(date.getHours()).padStart(2, '0')
+    const minute = String(date.getMinutes()).padStart(2, '0')
+    
+    // 如果是今天，显示时间
+    if (date.toDateString() === now.toDateString()) {
+      return `今天 ${hour}:${minute}`
+    }
+    // 如果是明天
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    if (date.toDateString() === tomorrow.toDateString()) {
+      return `明天 ${hour}:${minute}`
+    }
+    // 其他日期
+    return `${month}/${day} ${hour}:${minute}`
   }
 }
 
-// v1.2: 获取倒计时颜色类
-const getCountdownClass = (task) => {
+// 方法：计算任务截止时间
+const calculateDeadline = (task) => {
   const now = new Date()
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
-  const remainingTime = endOfDay - now
-  const hours = remainingTime / (1000 * 60 * 60)
   
-  if (hours <= 1) return 'countdown-urgent'      // 小于1小时：红色
-  if (hours <= 3) return 'countdown-warning'     // 小于3小时：橙色
-  return 'countdown-normal'                       // 正常：蓝色
+  switch (task.type) {
+    case 'today':
+      // 今天24点前
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+    
+    case 'tomorrow':
+      // 明天24点前
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59, 59)
+    
+    case 'this_week':
+      // 本周日24点前
+      const endOfWeek = new Date(now)
+      const dayOfWeek = now.getDay()
+      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+      endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday)
+      return new Date(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate(), 23, 59, 59)
+    
+    case 'custom_date':
+      // 指定日期时间
+      if (task.customDate) {
+        const date = new Date(task.customDate)
+        if (task.customTime) {
+          const [hours, minutes] = task.customTime.split(':')
+          date.setHours(parseInt(hours), parseInt(minutes), 0)
+        } else {
+          date.setHours(23, 59, 59)
+        }
+        return date
+      }
+      return null
+    
+    case 'daily':
+    case 'weekday':
+    case 'weekly':
+      // 重复任务：今天24点前
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+    
+    default:
+      return null
+  }
+}
+
+// 方法：获取截止时间颜色类
+const getDeadlineClass = (task) => {
+  if (task.status === TaskStatus.COMPLETED) return 'deadline-completed'
+  
+  const deadline = calculateDeadline(task)
+  if (!deadline) return ''
+  
+  const now = new Date()
+  const diff = deadline - now
+  const hours = diff / (1000 * 60 * 60)
+  
+  if (diff < 0) return 'deadline-overdue'        // 已逾期：红色
+  if (hours <= 1) return 'deadline-urgent'       // 小于1小时：红色
+  if (hours <= 6) return 'deadline-warning'      // 小于6小时：橙色
+  return 'deadline-normal'                        // 正常：蓝色
 }
 
 // 方法：显示通知
@@ -1923,30 +2053,69 @@ onUnmounted(() => {
   gap: 0.2rem;
 }
 
-/* v1.2: 倒计时颜色分级 */
-.task-countdown {
-  font-size: 0.85rem;
+/* 番茄数徽章 */
+.badge-pomodoro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 0.2rem 0.5rem;
   border-radius: 12px;
   transition: all 0.3s;
 }
 
-.countdown-normal {
+.pomodoro-high {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.pomodoro-medium {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.pomodoro-low {
   background: rgba(102, 126, 234, 0.1);
   color: var(--primary-color);
 }
 
-.countdown-warning {
+/* 任务截止时间显示 */
+.task-deadline {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.deadline-normal {
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--primary-color);
+}
+
+.deadline-warning {
   background: rgba(255, 152, 0, 0.1);
   color: #ff9800;
+}
+
+.deadline-urgent {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
   animation: pulse 2s infinite;
 }
 
-.countdown-urgent {
-  background: rgba(244, 67, 54, 0.1);
-  color: #f44336;
-  animation: pulse 1s infinite;
+.deadline-overdue {
+  background: rgba(244, 67, 54, 0.15);
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+.deadline-completed {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+  text-decoration: line-through;
+  opacity: 0.7;
 }
 
 @keyframes pulse {
@@ -2127,6 +2296,96 @@ onUnmounted(() => {
 .stat-label {
   font-size: 0.85rem;
   color: var(--text-light);
+}
+
+/* 番茄统计 */
+.pomodoro-stats {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.stats-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+
+.pomodoro-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.pomodoro-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.pomodoro-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pomodoro-item.earned {
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.pomodoro-item.pending {
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.pomodoro-item.lost {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.pomodoro-item.total {
+  background: rgba(102, 126, 234, 0.15);
+  grid-column: span 2;
+}
+
+.pomodoro-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.pomodoro-info {
+  flex: 1;
+}
+
+.pomodoro-count {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.pomodoro-item.earned .pomodoro-count {
+  color: #4caf50;
+}
+
+.pomodoro-item.pending .pomodoro-count {
+  color: #ff9800;
+}
+
+.pomodoro-item.lost .pomodoro-count {
+  color: #f44336;
+}
+
+.pomodoro-item.total .pomodoro-count {
+  color: var(--primary-color);
+  font-size: 2.2rem;
+}
+
+.pomodoro-label {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  font-weight: 500;
 }
 
 .profile-form {
