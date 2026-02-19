@@ -1,15 +1,5 @@
 <template>
   <div class="todo-layout">
-    <!-- 下拉刷新指示器 -->
-    <div class="pull-refresh-indicator" :class="{ active: pullRefreshState !== 'idle' }">
-      <div class="refresh-icon" :class="pullRefreshState">
-        {{ pullRefreshState === 'pulling' ? '↓' : pullRefreshState === 'ready' ? '↑' : '⟳' }}
-      </div>
-      <span class="refresh-text">
-        {{ pullRefreshState === 'pulling' ? '下拉刷新' : pullRefreshState === 'ready' ? '松开刷新' : '刷新中...' }}
-      </span>
-    </div>
-
     <!-- 核心内容区 -->
     <main class="main-content glass-card" ref="mainContent">
       <!-- 顶部标题栏 -->
@@ -18,114 +8,57 @@
           <h1>{{ taskTitle }}</h1>
         </div>
         <div class="header-actions">
+          <button class="btn-refresh" @click="handleRefresh" :class="{ spinning: isRefreshing }" title="刷新">
+            ⟳
+          </button>
           <button class="btn btn-info" @click="showTrash = true">回收站 :{{ taskStore.deletedTasks.length }}</button>
-          <button class="btn btn-danger" @click="handleLogout">退出登录</button>
           <button class="btn-avatar" @click="showProfile = true" title="个人主页">
             <div class="avatar-mini">{{ currentUsername ? currentUsername.charAt(0).toUpperCase() : 'U' }}</div>
           </button>
         </div>
       </header>
 
-      <!-- 统计+筛选+添加 - 融合区域 v1.2优化 -->
+      <!-- 统计+筛选+添加 - 极简版 v1.5 -->
       <section class="dashboard-area">
-        <!-- 第一行：全局统计 + 分类筛选 -->
-        <div class="stats-all-in-one">
-          <!-- 占比 -->
+        <!-- 第一行：核心状态 -->
+        <div class="stats-compact">
+          <!-- 完成占比 -->
           <div class="stat-row">
-            <span class="stat-label-mini">占比</span>
-            <span class="stat-count-plain">:{{ completionPercentage }}%</span>
+            <span class="stat-label-mini">完成占比</span>
+            <span class="stat-count-plain">{{ completionPercentage }}%</span>
           </div>
 
           <!-- 全部 -->
           <div class="stat-row clickable" @click="setFilter('all')" :class="{ active: currentFilter === 'all' }">
             <span class="stat-label-mini">全部</span>
-            <span class="stat-count">:{{ baseFilteredTasks.length }}</span>
+            <span class="stat-count">{{ baseFilteredTasks.length }}</span>
           </div>
 
-          <!-- 分类统计 -->
-          <div 
-            v-for="cat in categories" 
-            :key="cat.value"
-            class="stat-row clickable"
-            :class="{ active: currentCategoryFilter === cat.value }"
-            @click="setCategoryFilter(cat.value)"
-          >
-            <span class="stat-label-mini">{{ cat.label }}</span>
-            <span class="stat-count">:{{ getCategoryCount(cat.value) }}</span>
-          </div>
-          
-          <button class="add-btn-text" @click="showAddForm = !showAddForm">{{ showAddForm ? '收起' : '添加' }}</button>
-        </div>
-
-        <!-- 第二行：状态筛选和时间筛选 (合并为一行) -->
-        <div class="filter-row-unified">
-          <div class="stat-row clickable" @click="setFilter('pending')" :class="{ active: currentFilter === 'pending' }">
-            <span class="stat-label-mini">待办</span>
-            <span class="stat-count">:{{ pendingCount }}</span>
-          </div>
+          <!-- 已完成 -->
           <div class="stat-row clickable" @click="setFilter('completed')" :class="{ active: currentFilter === 'completed' }">
             <span class="stat-label-mini">已完成</span>
-            <span class="stat-count success">:{{ completedCount }}</span>
+            <span class="stat-count success">{{ completedCount }}</span>
           </div>
+
+          <!-- 待办 -->
+          <div class="stat-row clickable" @click="setFilter('pending')" :class="{ active: currentFilter === 'pending' }">
+            <span class="stat-label-mini">待办</span>
+            <span class="stat-count">{{ pendingCount }}</span>
+          </div>
+
+          <!-- 已逾期 -->
           <div class="stat-row clickable" @click="setFilter('overdue')" :class="{ active: currentFilter === 'overdue' }">
             <span class="stat-label-mini">已逾期</span>
-            <span class="stat-count danger">:{{ overdueCount }}</span>
+            <span class="stat-count danger">{{ overdueCount }}</span>
           </div>
-          
-          <!-- 二合一日期区间选择器 (合并到状态行) -->
-          <div class="date-range-display">
-            <div class="range-values">
-              <div 
-                class="date-clickable-area" 
-                :class="{ 'placeholder': !startDate }" 
-                @click="showDatePicker('start')"
-              >
-                {{ startDate ? formatDisplayDate(startDate) : '查询日期起' }}
-              </div>
-              <span class="range-sep">-</span>
-              <div 
-                class="date-clickable-area" 
-                :class="{ 'placeholder': !endDate }" 
-                @click="showDatePicker('end')"
-              >
-                {{ endDate ? formatDisplayDate(endDate) : '查询日期止' }}
-              </div>
-            </div>
-            <button v-if="startDate || endDate" class="clear-date-icon" @click.stop="clearDateFilter">✕</button>
-          </div>
-          <input ref="hiddenStartDate" type="date" style="display:none" @change="handleStartDateChange">
-          <input ref="hiddenEndDate" type="date" style="display:none" @change="handleEndDateChange">
         </div>
 
-        <!-- 第三行：优先级筛选和关键字搜索 -->
-        <div class="filter-row-unified">
-          <div class="stat-row clickable" @click="setPriorityFilter('all')" :class="{ active: currentPriorityFilter === 'all' }">
-            <span class="stat-label-mini">全部优先级</span>
-          </div>
-          <div class="stat-row clickable" @click="setPriorityFilter('high')" :class="{ active: currentPriorityFilter === 'high' }">
-            <span class="stat-label-mini">⚡高</span>
-            <span class="stat-count danger">:{{ highPriorityCount }}</span>
-          </div>
-          <div class="stat-row clickable" @click="setPriorityFilter('medium')" :class="{ active: currentPriorityFilter === 'medium' }">
-            <span class="stat-label-mini">⚡中</span>
-            <span class="stat-count">:{{ mediumPriorityCount }}</span>
-          </div>
-          <div class="stat-row clickable" @click="setPriorityFilter('low')" :class="{ active: currentPriorityFilter === 'low' }">
-            <span class="stat-label-mini">⚡低</span>
-            <span class="stat-count success">:{{ lowPriorityCount }}</span>
-          </div>
-          
-          <!-- 关键字搜索 -->
-          <div class="search-box">
-            <input 
-              v-model="searchKeyword" 
-              type="text" 
-              class="search-input" 
-              placeholder="🔍 搜索任务..."
-              @input="handleSearch"
-            >
-            <button v-if="searchKeyword" class="clear-search" @click="clearSearch">✕</button>
-          </div>
+        <!-- 第二行：筛选和添加按钮 -->
+        <div class="action-buttons">
+          <button class="filter-btn" @click="showFilterModal = true">
+            🔍 筛选
+          </button>
+          <button class="add-btn-text" @click="showAddForm = !showAddForm">{{ showAddForm ? '收起' : '添加' }}</button>
         </div>
 
         <!-- 添加任务表单 -->
@@ -326,6 +259,118 @@
       </div>
     </div>
 
+    <!-- 筛选弹窗 -->
+    <div v-if="showFilterModal" class="modal-overlay" @click.self="showFilterModal = false">
+      <div class="modal-content filter-modal">
+        <div class="modal-header">
+          <h3>🔍 高级筛选</h3>
+          <button class="close-btn" @click="showFilterModal = false">&times;</button>
+        </div>
+        <div class="modal-body filter-body">
+          <!-- 日期范围 -->
+          <div class="filter-section">
+            <label class="filter-label">📅 日期范围</label>
+            <div class="date-range-picker">
+              <div 
+                class="date-input-box" 
+                :class="{ 'has-value': startDate }" 
+                @click="showDatePicker('start')"
+              >
+                {{ startDate ? formatDisplayDate(startDate) : '开始日期' }}
+              </div>
+              <span class="date-separator">至</span>
+              <div 
+                class="date-input-box" 
+                :class="{ 'has-value': endDate }" 
+                @click="showDatePicker('end')"
+              >
+                {{ endDate ? formatDisplayDate(endDate) : '结束日期' }}
+              </div>
+              <button v-if="startDate || endDate" class="clear-btn-small" @click="clearDateFilter">清除</button>
+            </div>
+            <input ref="hiddenStartDate" type="date" style="display:none" @change="handleStartDateChange">
+            <input ref="hiddenEndDate" type="date" style="display:none" @change="handleEndDateChange">
+          </div>
+
+          <!-- 分类筛选 -->
+          <div class="filter-section">
+            <label class="filter-label">🏷️ 分类</label>
+            <div class="filter-buttons">
+              <button 
+                class="filter-chip" 
+                :class="{ active: currentCategoryFilter === 'all' }"
+                @click="setCategoryFilter('all')"
+              >
+                全部
+              </button>
+              <button 
+                v-for="cat in categories" 
+                :key="cat.value"
+                class="filter-chip" 
+                :class="{ active: currentCategoryFilter === cat.value }"
+                @click="setCategoryFilter(cat.value)"
+              >
+                {{ cat.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 优先级筛选 -->
+          <div class="filter-section">
+            <label class="filter-label">⚡ 优先级</label>
+            <div class="filter-buttons">
+              <button 
+                class="filter-chip" 
+                :class="{ active: currentPriorityFilter === 'all' }"
+                @click="setPriorityFilter('all')"
+              >
+                全部
+              </button>
+              <button 
+                class="filter-chip priority-high" 
+                :class="{ active: currentPriorityFilter === 'high' }"
+                @click="setPriorityFilter('high')"
+              >
+                高
+              </button>
+              <button 
+                class="filter-chip priority-medium" 
+                :class="{ active: currentPriorityFilter === 'medium' }"
+                @click="setPriorityFilter('medium')"
+              >
+                中
+              </button>
+              <button 
+                class="filter-chip priority-low" 
+                :class="{ active: currentPriorityFilter === 'low' }"
+                @click="setPriorityFilter('low')"
+              >
+                低
+              </button>
+            </div>
+          </div>
+
+          <!-- 关键字搜索 -->
+          <div class="filter-section">
+            <label class="filter-label">🔍 关键字搜索</label>
+            <div class="search-input-wrapper">
+              <input 
+                v-model="searchKeyword" 
+                type="text" 
+                class="search-input-modal" 
+                placeholder="搜索任务名称或描述..."
+                @input="handleSearch"
+              >
+              <button v-if="searchKeyword" class="clear-btn-small" @click="clearSearch">清除</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showFilterModal = false">关闭</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 回收站模态框 -->
     <div v-if="showTrash" class="modal-overlay" @click.self="showTrash = false">
       <div class="modal-content glass-card" style="background: white;">
@@ -478,6 +523,13 @@
               </div>
             </div>
             <div class="entry-arrow">›</div>
+          </div>
+
+          <!-- 退出登录按钮 -->
+          <div style="margin-top: 1.5rem; text-align: center;">
+            <button class="btn btn-danger" @click="handleLogout" style="width: 100%;">
+              退出登录
+            </button>
           </div>
         </div>
       </div>
@@ -948,12 +1000,8 @@ const currentPage = ref(1)
 const pageSize = 6
 const fileInput = ref(null)
 const mainContent = ref(null)
-
-// 下拉刷新相关
-const pullRefreshState = ref('idle') // idle, pulling, ready, refreshing
-let startY = 0
-let currentY = 0
-const pullThreshold = 80
+const showFilterModal = ref(false)
+const isRefreshing = ref(false)
 
 // 个人主页相关
 const newUsername = ref('')
@@ -2201,49 +2249,18 @@ const showNotification = (message, type = 'info') => {
   emit('notify', { message, type })
 }
 
-// 生命周期钩子：组件挂载时
-// 下拉刷新方法
-const handleTouchStart = (e) => {
-  if (mainContent.value && mainContent.value.scrollTop === 0) {
-    startY = e.touches[0].clientY
-  }
-}
-
-const handleTouchMove = (e) => {
-  if (startY === 0) return
+// 刷新方法
+const handleRefresh = async () => {
+  if (isRefreshing.value) return
   
-  currentY = e.touches[0].clientY
-  const diff = currentY - startY
-  
-  if (diff > 0 && mainContent.value.scrollTop === 0) {
-    e.preventDefault()
-    
-    if (diff < pullThreshold) {
-      pullRefreshState.value = 'pulling'
-    } else {
-      pullRefreshState.value = 'ready'
-    }
-  }
-}
-
-const handleTouchEnd = async () => {
-  if (pullRefreshState.value === 'ready') {
-    pullRefreshState.value = 'refreshing'
-    await refreshData()
-    setTimeout(() => {
-      pullRefreshState.value = 'idle'
-    }, 500)
-  } else {
-    pullRefreshState.value = 'idle'
-  }
-  startY = 0
-  currentY = 0
-}
-
-const refreshData = async () => {
+  isRefreshing.value = true
   await taskStore.setCurrentUser(userStore.currentUser)
   await loadUserInfo()
   taskStore.checkOverdueTasks()
+  
+  setTimeout(() => {
+    isRefreshing.value = false
+  }, 800)
 }
 
 // 检查并发送逾期提醒
@@ -2330,77 +2347,15 @@ onMounted(async () => {
   
   // 首次立即检查
   checkAndNotifyDeadline()
-  
-  // 添加下拉刷新事件监听
-  if (mainContent.value) {
-    mainContent.value.addEventListener('touchstart', handleTouchStart, { passive: false })
-    mainContent.value.addEventListener('touchmove', handleTouchMove, { passive: false })
-    mainContent.value.addEventListener('touchend', handleTouchEnd)
-  }
 })
 
 // 生命周期钩子：组件卸载时
 onUnmounted(() => {
   if (countdownInterval.value) clearInterval(countdownInterval.value)
-  
-  // 移除下拉刷新事件监听
-  if (mainContent.value) {
-    mainContent.value.removeEventListener('touchstart', handleTouchStart)
-    mainContent.value.removeEventListener('touchmove', handleTouchMove)
-    mainContent.value.removeEventListener('touchend', handleTouchEnd)
-  }
 })
 </script>
 
 <style scoped>
-.pull-refresh-indicator {
-  position: fixed;
-  top: -60px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: top 0.3s ease;
-  z-index: 9999;
-}
-
-.pull-refresh-indicator.active {
-  top: 20px;
-}
-
-.refresh-icon {
-  font-size: 1.2rem;
-  transition: transform 0.3s ease;
-}
-
-.refresh-icon.pulling {
-  transform: rotate(0deg);
-}
-
-.refresh-icon.ready {
-  transform: rotate(180deg);
-}
-
-.refresh-icon.refreshing {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.refresh-text {
-  font-size: 0.9rem;
-  color: #333;
-  font-weight: 500;
-}
-
 .todo-layout {
   display: flex;
   justify-content: center;
@@ -2459,6 +2414,47 @@ onUnmounted(() => {
   flex-wrap: nowrap;
 }
 
+/* v1.5: 极简状态栏 */
+.stats-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  justify-content: flex-start;
+  margin-bottom: 0.5rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0.2rem 0;
+}
+
+/* 第二行：操作按钮 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+  justify-content: flex-start;
+}
+
+.filter-btn {
+  padding: 0.3rem 0.6rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  width: fit-content;
+  display: inline-block;
+}
+
+.filter-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 /* v1.2: 统计数据横向紧凑排列 */
 .stat-row {
   display: flex;
@@ -2467,8 +2463,8 @@ onUnmounted(() => {
   padding: 0.2rem 0.3rem;
   border-radius: 8px;
   transition: all 0.3s;
-  flex-shrink: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .stat-row.clickable {
@@ -2491,25 +2487,28 @@ onUnmounted(() => {
 }
 
 .stat-count {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-dark);
+  flex-shrink: 0;
 }
 
 .stat-count.success { color: var(--success-color); }
 .stat-count.danger { color: var(--error-color); }
 
 .stat-count-plain {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-light);
   opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .stat-label-mini {
   font-size: 0.7rem;
   color: var(--text-light);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* 第二行：状态和时间筛选 (合并为一行) */
@@ -3031,6 +3030,39 @@ onUnmounted(() => {
 .user-info h1 {
   font-size: 1.4rem;
   margin: 0;
+}
+
+.btn-refresh {
+  width: auto;
+  height: auto;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 3.0rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.btn-refresh:hover {
+  transform: scale(1.2);
+  color: white;
+}
+
+.btn-refresh:active {
+  transform: scale(0.9);
+}
+
+.btn-refresh.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .btn-avatar {
@@ -3856,6 +3888,151 @@ onUnmounted(() => {
   max-width: 600px;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+/* 筛选弹窗样式 */
+.filter-modal {
+  max-width: 500px;
+  background: white;
+  border-radius: 16px;
+}
+
+.filter-body {
+  padding: 1rem 0;
+}
+
+.filter-section {
+  margin-bottom: 1.5rem;
+}
+
+.filter-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.6rem;
+}
+
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.date-input-box {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.date-input-box.has-value {
+  color: #333;
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.date-input-box:hover {
+  border-color: #667eea;
+}
+
+.date-separator {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.filter-chip.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.filter-chip.priority-high.active {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.filter-chip.priority-medium.active {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.filter-chip.priority-low.active {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.search-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.search-input-modal {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.search-input-modal:focus {
+  outline: none;
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.clear-btn-small {
+  padding: 0.4rem 0.8rem;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.clear-btn-small:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
 }
 
 .profile-modal {
