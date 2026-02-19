@@ -1229,7 +1229,7 @@ onUnmounted(() => {
 .todo-layout {
   display: flex;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 0;
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
@@ -1240,8 +1240,28 @@ onUnmounted(() => {
   width: 100%;
   max-width: 100%;
   flex: none;
-  padding: 0.5rem;
+  padding: 0.5rem 0.8rem;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 任务列表与统计区域内容完全对齐（像素级） */
+.task-list {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+.task-list ul {
+  width: 100%;
+  max-width: none;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 /* v1.2: 统计栏卡片感增强 */
@@ -1249,9 +1269,10 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.35);
   border-radius: 12px;
   padding: 0.8rem;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem 0;
   border: 1.5px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
 }
 
 .stats-all-in-one {
@@ -1687,7 +1708,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  margin: -0.5rem 0.5rem -0.5rem -0.5rem;
+  margin: -0.5rem 0.2rem -0.5rem -0.5rem; /* 微调间距以对齐统计按钮 */
   cursor: pointer;
 }
 
@@ -1696,13 +1717,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  padding: 1rem;
+  padding: 0.8rem; /* 与 dashboard-area 保持一致 */
   background: white;
   border-radius: 12px;
-  margin-bottom: 0.8rem;
+  margin: 0 0 0.8rem 0 !important; /* 强制覆盖全局 1.5rem margin */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s;
   -webkit-tap-highlight-color: transparent;
+  width: 100%;
 }
 
 .task-item:active {
@@ -1823,6 +1845,21 @@ onUnmounted(() => {
   display: flex;
   gap: 0.8rem;
   align-items: center;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 0.8rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--glass-border);
+  width: 100%;
+}
+
+.user-info h1 {
+  font-size: 1.4rem;
+  margin: 0;
 }
 
 .btn-icon {
