@@ -87,6 +87,37 @@
           <input ref="hiddenEndDate" type="date" style="display:none" @change="handleEndDateChange">
         </div>
 
+        <!-- 第三行：优先级筛选和关键字搜索 -->
+        <div class="filter-row-unified">
+          <div class="stat-row clickable" @click="setPriorityFilter('all')" :class="{ active: currentPriorityFilter === 'all' }">
+            <span class="stat-label-mini">全部优先级</span>
+          </div>
+          <div class="stat-row clickable" @click="setPriorityFilter('high')" :class="{ active: currentPriorityFilter === 'high' }">
+            <span class="stat-label-mini">⚡高</span>
+            <span class="stat-count danger">:{{ highPriorityCount }}</span>
+          </div>
+          <div class="stat-row clickable" @click="setPriorityFilter('medium')" :class="{ active: currentPriorityFilter === 'medium' }">
+            <span class="stat-label-mini">⚡中</span>
+            <span class="stat-count">:{{ mediumPriorityCount }}</span>
+          </div>
+          <div class="stat-row clickable" @click="setPriorityFilter('low')" :class="{ active: currentPriorityFilter === 'low' }">
+            <span class="stat-label-mini">⚡低</span>
+            <span class="stat-count success">:{{ lowPriorityCount }}</span>
+          </div>
+          
+          <!-- 关键字搜索 -->
+          <div class="search-box">
+            <input 
+              v-model="searchKeyword" 
+              type="text" 
+              class="search-input" 
+              placeholder="🔍 搜索任务..."
+              @input="handleSearch"
+            >
+            <button v-if="searchKeyword" class="clear-search" @click="clearSearch">✕</button>
+          </div>
+        </div>
+
         <!-- 添加任务表单 -->
         <div v-if="showAddForm" class="add-form-inline">
           <input 
@@ -355,7 +386,7 @@
 
     <!-- 任务详情编辑模态框 -->
     <div v-if="editingTask" class="modal-overlay" @click.self="editingTask = null">
-      <div class="modal-content glass-card" style="background: white;">
+      <div class="modal-content glass-card" style="background: white; max-width: 500px;">
         <div class="modal-header">
           <h3>编辑任务详情</h3>
           <button class="close-btn" @click="editingTask = null">&times;</button>
@@ -375,12 +406,45 @@
               v-model="editDescription" 
               class="input textarea" 
               placeholder="添加更多细节描述..."
-              rows="5"
+              rows="4"
             ></textarea>
+          </div>
+          <div class="edit-field">
+            <label>任务分类</label>
+            <select v-model="editCategory" class="input">
+              <option value="work">💼 工作</option>
+              <option value="study">📚 学习</option>
+              <option value="life">🏠 生活</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>优先级</label>
+            <select v-model="editPriority" class="input">
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>任务类型</label>
+            <select v-model="editType" class="input">
+              <option value="today">仅今天</option>
+              <option value="daily">每天</option>
+              <option value="weekly">每周</option>
+            </select>
+          </div>
+          <div v-if="editType === 'weekly'" class="edit-field">
+            <label>重复周期</label>
+            <div class="weekday-selector">
+              <label v-for="(day, index) in weekdays" :key="index" class="weekday-label">
+                <input type="checkbox" :value="index" v-model="editWeekdays">
+                <span>{{ day }}</span>
+              </label>
+            </div>
           </div>
           <div class="modal-actions">
             <button class="btn btn-secondary" @click="editingTask = null">取消</button>
-            <button class="btn btn-primary" @click="saveDescription">保存更改</button>
+            <button class="btn btn-primary" @click="saveTaskEdit">保存更改</button>
           </div>
         </div>
       </div>
@@ -420,6 +484,8 @@ const newTaskPriority = ref('medium')
 const selectedWeekdays = ref([])
 const currentFilter = ref('all')
 const currentCategoryFilter = ref('all')
+const currentPriorityFilter = ref('all')
+const searchKeyword = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const countdownInterval = ref(null)
@@ -428,6 +494,10 @@ const showProfile = ref(false)
 const editingTask = ref(null)
 const editDescription = ref('')
 const editText = ref('')
+const editCategory = ref('work')
+const editPriority = ref('medium')
+const editType = ref('today')
+const editWeekdays = ref([])
 const showAddForm = ref(true)
 const currentPage = ref(1)
 const pageSize = 6
@@ -482,10 +552,26 @@ const baseFilteredTasks = computed(() => {
 
 // 计算属性：完全筛选后的任务（包括状态筛选，用于显示）
 const filteredTasks = computed(() => {
-  return taskStore.getFilteredTasks(currentFilter.value, currentCategoryFilter.value, {
+  let tasks = taskStore.getFilteredTasks(currentFilter.value, currentCategoryFilter.value, {
     start: startDate.value,
     end: endDate.value
   })
+  
+  // 优先级筛选
+  if (currentPriorityFilter.value !== 'all') {
+    tasks = tasks.filter(t => t.priority === currentPriorityFilter.value)
+  }
+  
+  // 关键字搜索（模糊匹配任务名称和描述）
+  if (searchKeyword.value.trim()) {
+    const keyword = searchKeyword.value.toLowerCase().trim()
+    tasks = tasks.filter(t => 
+      t.text.toLowerCase().includes(keyword) || 
+      (t.description && t.description.toLowerCase().includes(keyword))
+    )
+  }
+  
+  return tasks
 })
 
 // 统计数据（基于baseFilteredTasks，不受状态筛选影响）
@@ -499,6 +585,11 @@ const completionPercentage = computed(() => {
 const pendingCount = computed(() => baseFilteredTasks.value.filter(t => t.status === TaskStatus.PENDING).length)
 const completedCount = computed(() => baseFilteredTasks.value.filter(t => t.status === TaskStatus.COMPLETED).length)
 const overdueCount = computed(() => baseFilteredTasks.value.filter(t => t.status === TaskStatus.OVERDUE).length)
+
+// 优先级统计（基于baseFilteredTasks）
+const highPriorityCount = computed(() => baseFilteredTasks.value.filter(t => t.priority === 'high').length)
+const mediumPriorityCount = computed(() => baseFilteredTasks.value.filter(t => t.priority === 'medium').length)
+const lowPriorityCount = computed(() => baseFilteredTasks.value.filter(t => t.priority === 'low').length)
 
 // 分类统计（基于当前时间筛选）
 const getCategoryCount = (category) => {
@@ -556,6 +647,23 @@ const formatDisplayDate = (dateStr) => {
 // 方法：设置分类筛选
 const setCategoryFilter = (category) => {
   currentCategoryFilter.value = category
+  currentPage.value = 1
+}
+
+// 方法：设置优先级筛选
+const setPriorityFilter = (priority) => {
+  currentPriorityFilter.value = priority
+  currentPage.value = 1
+}
+
+// 方法：处理搜索
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+// 方法：清除搜索
+const clearSearch = () => {
+  searchKeyword.value = ''
   currentPage.value = 1
 }
 
@@ -670,19 +778,33 @@ const openEditModal = (task) => {
   editingTask.value = { ...task }
   editText.value = task.text
   editDescription.value = task.description || ''
+  editCategory.value = task.category
+  editPriority.value = task.priority
+  editType.value = task.type
+  editWeekdays.value = task.weekdays ? [...task.weekdays] : []
 }
 
-// 方法：保存描述
-const saveDescription = async () => {
+// 方法：保存任务编辑
+const saveTaskEdit = async () => {
   if (!editingTask.value) return
   if (!editText.value.trim()) {
     showNotification('任务名称不能为空！', 'error')
     return
   }
   
+  // 如果是每周类型，必须选择至少一天
+  if (editType.value === 'weekly' && editWeekdays.value.length === 0) {
+    showNotification('每周任务至少选择一天！', 'error')
+    return
+  }
+  
   await taskStore.updateTask(editingTask.value.id, {
     text: editText.value.trim(),
-    description: editDescription.value
+    description: editDescription.value,
+    category: editCategory.value,
+    priority: editPriority.value,
+    type: editType.value,
+    weekdays: editType.value === 'weekly' ? editWeekdays.value : []
   })
   
   editingTask.value = null
@@ -1231,6 +1353,51 @@ onUnmounted(() => {
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 搜索框 */
+.search-box {
+  flex: 2;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.2rem 2rem 0.2rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--primary-color);
+}
+
+.search-input::placeholder {
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+.clear-search {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  transition: color 0.2s;
+}
+
+.clear-search:hover {
+  color: var(--error-color);
 }
 
 .date-range-display {
@@ -2270,5 +2437,35 @@ onUnmounted(() => {
   font-weight: 600;
   min-width: 60px;
   text-align: center;
+}
+
+/* 编辑模态框周期选择器 */
+.weekday-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.weekday-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+}
+
+.weekday-label:has(input:checked) {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.weekday-label input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
 }
 </style>
