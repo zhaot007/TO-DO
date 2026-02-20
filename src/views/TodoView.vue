@@ -57,9 +57,15 @@
             <span class="stat-label">已逾期</span>
             <span class="stat-value danger">{{ overdueCount }}</span>
           </div>
+
+          <!-- 添加/收起按钮 - 融入统计栏 -->
+          <div class="stat-card clickable add-toggle-card" @click="showAddForm = !showAddForm" :class="{ active: showAddForm }">
+            <span class="stat-label">{{ showAddForm ? '收起' : '添加' }}</span>
+            <span class="stat-value primary">{{ showAddForm ? '✕' : '➕' }}</span>
+          </div>
         </div>
 
-        <!-- 第二行：搜索框 + 筛选 + 添加 -->
+        <!-- 第二行：搜索框 + 筛选 -->
         <div class="action-bar">
           <!-- 搜索框 -->
           <div class="search-container">
@@ -76,11 +82,6 @@
           <!-- 筛选按钮 -->
           <button class="action-btn filter-btn-main" @click="showFilterModal = true" title="高级筛选">
             🔍 筛选
-          </button>
-
-          <!-- 添加/收起按钮 -->
-          <button class="action-btn add-btn-main" @click="showAddForm = !showAddForm" :title="showAddForm ? '收起' : '添加任务'">
-            {{ showAddForm ? '✕ 收起' : '➕ 添加' }}
           </button>
         </div>
 
@@ -2539,25 +2540,44 @@ onUnmounted(() => {
 /* v1.5.6: Grid统计卡片 - 扁平化，直接浮在背景上 */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 强行平分5列 */
-  gap: 0.3rem; /* 缩小间距确保不溢出 */
+  grid-template-columns: repeat(6, 1fr); /* 变更为 6 列 */
+  gap: 0.3rem;
   margin-bottom: 0.5rem;
   width: 100%;
 }
 
 .stat-card {
   display: flex;
-  flex-direction: column-reverse; /* 数字在上，标签在下 */
+  flex-direction: column-reverse;
   align-items: center;
   justify-content: center;
-  padding: 0.2rem 0.1rem; /* 极窄内边距 */
+  padding: 0.2rem 0.1rem;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   transition: all 0.3s;
-  min-height: 42px; /* 紧凑高度 */
+  min-height: 42px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  overflow: hidden; /* 防止溢出 */
+  overflow: hidden;
+}
+
+.stat-card.add-toggle-card .stat-value.primary {
+  color: #667eea;
+}
+
+/* 移除激活时的蓝色背景，保持纯白一致性 */
+.stat-card.add-toggle-card.active {
+  background: white;
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.stat-card.add-toggle-card.active .stat-label {
+  color: #888;
+}
+
+.stat-card.add-toggle-card.active .stat-value {
+  color: #667eea;
 }
 
 .stat-card.clickable {
