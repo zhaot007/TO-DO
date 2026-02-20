@@ -2459,14 +2459,15 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* v1.2: 统计栏卡片感增强 */
+/* v1.5.6: 扁平化设计 - 去掉外壳，让组件直接呼吸 */
 .dashboard-area {
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 12px;
-  padding: 0.8rem;
-  margin: 0 0 1rem 0;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  /* 移除厚重外壳：无背景、无边框、无padding */
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  margin: 0 0 0.8rem 0;
+  border: none;
+  box-shadow: none;
   width: 100%;
 }
 
@@ -2518,12 +2519,12 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
-/* v1.5.2: Grid统计卡片布局 - 超紧凑版 */
+/* v1.5.6: Grid统计卡片 - 扁平化，直接浮在背景上 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 
 .stat-card {
@@ -2531,12 +2532,13 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.25rem;
+  padding: 0.5rem 0.3rem;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
+  border-radius: 10px;
   transition: all 0.3s;
-  min-height: 42px;
+  min-height: 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card.clickable {
@@ -2576,12 +2578,12 @@ onUnmounted(() => {
   color: #ef4444;
 }
 
-/* 第二行：操作栏 - 紧凑版 */
+/* v1.5.6: 操作栏 - 扁平化 */
 .action-bar {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 
 .search-container {
@@ -2593,11 +2595,12 @@ onUnmounted(() => {
 
 .search-input-main {
   width: 100%;
-  padding: 0.45rem 2.5rem 0.45rem 0.8rem;
+  padding: 0.55rem 2.5rem 0.55rem 0.9rem;
   border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.95);
   font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   color: #333;
   transition: all 0.3s;
 }
@@ -4571,28 +4574,32 @@ onUnmounted(() => {
   background-color: #dee2e6;
 }
 
-/* 两行布局添加表单 */
+/* v1.5.6: 两行布局添加表单 - 扁平化，去掉外壳 */
 .add-form-two-row {
-  margin-top: 0.6rem;
-  padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  border: none;
 }
 
-/* 第一行：主输入区 */
+/* 第一行：主输入区 - 独立卡片 */
 .add-form-row-main {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .task-input-main {
   flex: 1;
-  padding: 0.7rem 1rem;
-  border: 2px solid #d0d0d0;
-  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   background: white;
   font-size: 0.9rem;
   color: #333;
@@ -4635,12 +4642,16 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
-/* 第二行：属性配置区 */
+/* 第二行：属性配置区 - 独立卡片 */
 .add-form-row-attrs {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .attr-group {
