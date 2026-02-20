@@ -28,12 +28,6 @@
       <section class="dashboard-area">
         <!-- 第一行：统计数据（Grid均匀分布） -->
         <div class="stats-grid">
-          <!-- 完成占比 -->
-          <div class="stat-card">
-            <span class="stat-label">完成占比</span>
-            <span class="stat-value">{{ completionPercentage }}%</span>
-          </div>
-
           <!-- 全部 -->
           <div class="stat-card clickable" @click="setFilter('all')" :class="{ active: currentFilter === 'all' }">
             <span class="stat-label">全部</span>
@@ -59,8 +53,10 @@
           </div>
 
           <!-- 添加/收起按钮 - 融入统计栏 -->
-          <div class="stat-card clickable add-toggle-card" @click="showAddForm = !showAddForm" :class="{ active: showAddForm }">
-            <span class="stat-value primary">{{ showAddForm ? '▲' : '▼' }}</span>
+          <div class="stat-card add-toggle-card" @click="showAddForm = !showAddForm" :class="{ active: showAddForm }">
+            <div class="toggle-pill">
+              <span class="arrow-icon" :class="{ rotated: showAddForm }">↓</span>
+            </div>
           </div>
         </div>
 
@@ -2549,26 +2545,48 @@ onUnmounted(() => {
 .stat-card.add-toggle-card {
   max-width: 50px;
   min-width: 50px;
-  padding: 0.2rem 0.3rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.stat-card.add-toggle-card .stat-value.primary {
-  color: #667eea;
+.toggle-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.toggle-pill:hover {
+  background: rgba(102, 126, 234, 0.15);
+  transform: scale(1.05);
+}
+
+.arrow-icon {
   font-size: 1.2rem;
+  color: #667eea;
+  transition: transform 0.3s ease;
+  display: inline-block;
 }
 
-/* 移除激活时的蓝色背景，保持纯白一致性 */
-.stat-card.add-toggle-card.active {
-  background: white;
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+.arrow-icon.rotated {
+  transform: rotate(180deg);
 }
 
-.stat-card.add-toggle-card.active .stat-label {
-  color: #888;
+/* 激活状态 */
+.stat-card.add-toggle-card.active .toggle-pill {
+  background: rgba(102, 126, 234, 0.12);
 }
 
-.stat-card.add-toggle-card.active .stat-value {
+.stat-card.add-toggle-card.active .arrow-icon {
   color: #667eea;
 }
 
