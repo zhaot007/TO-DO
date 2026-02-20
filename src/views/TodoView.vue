@@ -350,7 +350,7 @@
                 @click="setCategoryFilter('all')"
               >
                 <span class="chip-label">全部</span>
-                <span class="chip-count">:{{ baseFilteredTasks.length }}</span>
+                <span class="chip-count">{{ baseFilteredTasks.length }}</span>
               </button>
               <button 
                 v-for="cat in categories" 
@@ -360,7 +360,7 @@
                 @click="setCategoryFilter(cat.value)"
               >
                 <span class="chip-label">{{ cat.label }}</span>
-                <span class="chip-count">:{{ getCategoryCount(cat.value) }}</span>
+                <span class="chip-count">{{ getCategoryCount(cat.value) }}</span>
               </button>
             </div>
           </div>
@@ -382,7 +382,7 @@
                 @click="setPriorityFilter('high')"
               >
                 <span class="chip-label">高</span>
-                <span class="chip-count">:{{ highPriorityCount }}</span>
+                <span class="chip-count">{{ highPriorityCount }}</span>
               </button>
               <button 
                 class="filter-chip priority-medium" 
@@ -390,7 +390,7 @@
                 @click="setPriorityFilter('medium')"
               >
                 <span class="chip-label">中</span>
-                <span class="chip-count">:{{ mediumPriorityCount }}</span>
+                <span class="chip-count">{{ mediumPriorityCount }}</span>
               </button>
               <button 
                 class="filter-chip priority-low" 
@@ -398,7 +398,7 @@
                 @click="setPriorityFilter('low')"
               >
                 <span class="chip-label">低</span>
-                <span class="chip-count">:{{ lowPriorityCount }}</span>
+                <span class="chip-count">{{ lowPriorityCount }}</span>
               </button>
             </div>
           </div>
@@ -2529,16 +2529,16 @@ onUnmounted(() => {
 
 .stat-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* 标签在下，数字在上 */
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.3rem;
+  padding: 0.8rem 0.3rem; /* 增加上下内边距 */
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 10px;
+  border-radius: 12px;
   transition: all 0.3s;
-  min-height: 50px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  min-height: 80px; /* 增加最小高度，填满纵向空间 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .stat-card.clickable {
@@ -2547,27 +2547,28 @@ onUnmounted(() => {
 
 .stat-card.clickable:hover {
   background: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .stat-card.active {
   background: white;
   border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
 }
 
 .stat-card .stat-label {
-  font-size: 0.65rem;
-  color: #555;
-  margin-bottom: 0.15rem;
-  font-weight: 600;
+  font-size: 0.75rem; /* 增大标签字号 */
+  color: #888;       /* 调淡标签颜色 */
+  margin-top: 0.4rem; /* 增加与数字的间距 */
+  font-weight: 500;
 }
 
 .stat-card .stat-value {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.6rem;  /* 大幅增加数字字号 */
+  font-weight: 800;  /* 极致加粗 */
   color: #222;
+  line-height: 1;
 }
 
 .stat-card .stat-value.success {
@@ -4253,15 +4254,16 @@ onUnmounted(() => {
   margin-bottom: 0.8rem;
 }
 
-/* 日期范围 - 撑满宽度 */
+/* 日期范围 - 撑满宽度并实现左右完美对齐 */
 .date-range-picker {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto;
+  display: flex; /* 改为 flex 布局以更好地控制拉伸 */
   align-items: center;
   gap: 0.6rem;
+  width: 100%;
 }
 
 .date-input-box {
+  flex: 1; /* 强制左右两个输入框平分剩余空间 */
   padding: 0.8rem 1rem;
   border: 2px solid #d0d0d0;
   border-radius: 10px;
@@ -4271,7 +4273,6 @@ onUnmounted(() => {
   transition: all 0.3s;
   text-align: center;
   background: #fafafa;
-  width: 100%;
 }
 
 .date-input-box.has-value {
@@ -4290,6 +4291,7 @@ onUnmounted(() => {
   color: #999;
   font-size: 0.85rem;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 /* 分类/优先级按钮 - 彻底实现横向自适应平铺 */
@@ -4303,19 +4305,21 @@ onUnmounted(() => {
 .filter-chip {
   flex: 1;
   min-width: calc(25% - 0.8rem); /* 默认尝试4列分布 */
-  padding: 0.8rem 0.5rem;
+  padding: 1.2rem 0.5rem; /* 适度增加高度 */
   border: 2px solid #d0d0d0;
   background: #fafafa;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s;
   white-space: nowrap;
   display: flex;
+  flex-direction: column-reverse; /* 数字在上，标签在下 */
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.5rem; /* 增加数字与文字的垂直间距 */
   box-sizing: border-box;
+  min-height: 85px; /* 进一步优化高度 */
 }
 
 /* 针对分类（4个按钮：全部+3个分类）和优先级（4个按钮：全部+3个优先级）的特殊处理 */
@@ -4327,14 +4331,17 @@ onUnmounted(() => {
 }
 
 .filter-chip .chip-label {
-  font-weight: 500;
-  color: #555;
+  font-weight: 600; /* 加强标签字重 */
+  color: #888;
+  font-size: 0.75rem; /* 适度减小标签字号 */
+  letter-spacing: 0.5px;
 }
 
 .filter-chip .chip-count {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: #666;
+  font-weight: 800;
+  font-size: 1.25rem; /* 缩小数字字号，避免压迫感 */
+  color: #333;
+  line-height: 1;
 }
 
 .filter-chip:hover {
@@ -4621,56 +4628,58 @@ onUnmounted(() => {
 
 .task-input-main {
   flex: 1;
-  padding: 0.65rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.95);
-  font-size: 0.9rem;
+  padding: 0.8rem 1.2rem; /* 增加高度和内边距 */
+  border: 1px solid rgba(0, 0, 0, 0.08); /* 极细边框 */
+  border-radius: 12px;
+  background: white;
+  font-size: 1rem;
   color: #333;
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* 增加轻盈阴影 */
+  line-height: 1.5;
 }
 
 .task-input-main::placeholder {
-  color: #999;
+  color: #bbb;
 }
 
 .task-input-main:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15); /* 聚焦时更强的悬浮感 */
 }
 
 .btn-submit-main {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 46px; /* 增加大小以匹配输入框高度 */
+  height: 46px;
+  border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-submit-main:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.5);
 }
 
 .btn-submit-main:active {
   transform: scale(0.95);
 }
 
-/* 第二行：属性配置区 - 去掉外层卡片，让属性组直接呼吸 */
+/* 第二行：属性配置区 - 优化悬浮感 */
 .add-form-row-attrs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   align-items: center;
   flex-wrap: wrap;
   padding: 0;
@@ -4683,19 +4692,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.5rem 0.7rem;
-  background: rgba(255, 255, 255, 0.95);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .attr-group:hover {
   background: white;
   border-color: #667eea;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.12);
 }
 
 .attr-icon {
