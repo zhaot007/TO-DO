@@ -52,6 +52,11 @@
             <span class="stat-value danger">{{ overdueCount }}</span>
           </div>
 
+          <!-- 筛选按钮 - 移到统计栏 -->
+          <button class="stat-card filter-card" @click="showFilterModal = true" title="高级筛选">
+            🔍
+          </button>
+
           <!-- 添加/收起按钮 - 融入统计栏 -->
           <div class="stat-card add-toggle-card" @click="showAddForm = !showAddForm" :class="{ active: showAddForm }">
             <div class="toggle-pill">
@@ -60,7 +65,7 @@
           </div>
         </div>
 
-        <!-- 第二行：搜索框 + 筛选 -->
+        <!-- 第二行：搜索框 -->
         <div class="action-bar">
           <!-- 搜索框 -->
           <div class="search-container">
@@ -73,11 +78,6 @@
             >
             <button v-if="searchKeyword" class="clear-search-btn" @click="clearSearch">✕</button>
           </div>
-
-          <!-- 筛选按钮 -->
-          <button class="action-btn filter-btn-main" @click="showFilterModal = true" title="高级筛选">
-            🔍 筛选
-          </button>
         </div>
 
         <!-- 添加任务表单 - 两行布局 -->
@@ -2552,6 +2552,27 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* 筛选按钮卡片 - 与箭头按钮高度一致 */
+.stat-card.filter-card {
+  max-width: 50px;
+  min-width: 50px;
+  padding: 0;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.stat-card.filter-card:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .toggle-pill {
