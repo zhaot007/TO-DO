@@ -1462,11 +1462,12 @@ const getTodayDateTime = () => {
 const formatDisplayDateTime = (dateTimeStr) => {
   if (!dateTimeStr) return ''
   const dt = new Date(dateTimeStr)
+  const year = dt.getFullYear()
   const month = dt.getMonth() + 1
   const day = dt.getDate()
   const hours = String(dt.getHours()).padStart(2, '0')
   const minutes = String(dt.getMinutes()).padStart(2, '0')
-  return `${month}/${day} ${hours}:${minutes}`
+  return `${year}/${month}/${day} ${hours}:${minutes}`
 }
 
 // 处理起始日期变更
@@ -2556,7 +2557,8 @@ onUnmounted(() => {
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   transition: all 0.3s;
-  min-height: 42px;
+  height: 44px;
+  box-sizing: border-box;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
@@ -2635,7 +2637,7 @@ onUnmounted(() => {
 
 .search-input-main {
   width: 100%;
-  padding: 0.45rem 2.5rem 0.45rem 0.9rem; /* 压缩上下 padding */
+  padding: 0.7rem 2.5rem 0.7rem 0.9rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   background: white;
@@ -2643,6 +2645,8 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   color: #333;
   transition: all 0.3s;
+  height: 44px;
+  box-sizing: border-box;
 }
 
 .search-input-main::placeholder {
@@ -4668,15 +4672,17 @@ onUnmounted(() => {
 
 .task-input-main {
   flex: 1;
-  padding: 0.8rem 1.2rem; /* 增加高度和内边距 */
-  border: 1px solid rgba(0, 0, 0, 0.08); /* 极细边框 */
+  padding: 0.7rem 1.2rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   background: white;
   font-size: 1rem;
   color: #333;
   transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* 增加轻盈阴影 */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   line-height: 1.5;
+  height: 44px;
+  box-sizing: border-box;
 }
 
 .task-input-main::placeholder {
@@ -4691,8 +4697,8 @@ onUnmounted(() => {
 }
 
 .btn-submit-main {
-  width: 46px; /* 增加大小以匹配输入框高度 */
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -4732,12 +4738,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.6rem 0.9rem;
+  padding: 0 0.9rem;
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   transition: all 0.3s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  height: 44px;
+  box-sizing: border-box;
 }
 
 .attr-group:hover {
@@ -4761,6 +4769,7 @@ onUnmounted(() => {
   padding: 0;
   outline: none;
   font-weight: 500;
+  min-width: 140px;
 }
 
 .attr-text {
@@ -4771,8 +4780,8 @@ onUnmounted(() => {
 }
 
 .btn-cancel-attr {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.95);
