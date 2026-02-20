@@ -7,47 +7,50 @@
         <div class="user-info">
           <h1>{{ taskTitle }}</h1>
         </div>
-        <div class="header-actions">
-          <!-- 刷新按钮 -->
-          <button class="btn-icon-circle btn-refresh-icon" @click="handleRefresh" title="刷新">
-            <span :class="{ spinning: isRefreshing }">⟳</span>
-          </button>
-          <!-- 回收站按钮（带数字气泡） -->
-          <button class="btn-icon-circle btn-trash" @click="showTrash = true" title="回收站">
-            🗑️
-            <span v-if="taskStore.deletedTasks.length > 0" class="badge-count">{{ taskStore.deletedTasks.length }}</span>
-          </button>
-          <!-- 个人头像 -->
-          <button class="btn-avatar" @click="showProfile = true" title="个人主页">
-            <div class="avatar-mini">{{ currentUsername ? currentUsername.charAt(0).toUpperCase() : 'U' }}</div>
-          </button>
+        <!-- v1.5.12: 胶囊化功能组 -->
+        <div class="header-actions-capsule">
+          <div class="header-actions">
+            <!-- 刷新按钮 -->
+            <button class="btn-icon-circle btn-refresh-icon" @click="handleRefresh" title="刷新">
+              <span :class="{ spinning: isRefreshing }">⟳</span>
+            </button>
+            <!-- 回收站按钮（带数字气泡） -->
+            <button class="btn-icon-circle btn-trash" @click="showTrash = true" title="回收站">
+              🗑️
+              <span v-if="taskStore.deletedTasks.length > 0" class="badge-count">{{ taskStore.deletedTasks.length }}</span>
+            </button>
+            <!-- 个人头像 -->
+            <button class="btn-avatar" @click="showProfile = true" title="个人主页">
+              <div class="avatar-mini">{{ currentUsername ? currentUsername.charAt(0).toUpperCase() : 'U' }}</div>
+            </button>
+          </div>
         </div>
       </header>
 
       <!-- 统计+筛选+添加 - 两行布局 v1.5.2 -->
       <section class="dashboard-area">
-        <!-- 第一行：统计数据（Grid均匀分布） -->
+        <!-- 第一行：统计数据（主次分明布局） -->
         <div class="stats-grid">
-          <!-- 全部 -->
-          <div class="stat-card clickable" @click="setFilter('all')" :class="{ active: currentFilter === 'all' }">
+          <!-- 全部 - 核心指标，稍宽 -->
+          <div class="stat-card stat-card-primary clickable" @click="setFilter('all')" :class="{ active: currentFilter === 'all' }">
             <span class="stat-label">全部</span>
             <span class="stat-value">{{ baseFilteredTasks.length }}</span>
           </div>
 
-          <!-- 已完成 -->
-          <div class="stat-card clickable" @click="setFilter('completed')" :class="{ active: currentFilter === 'completed' }">
+          <!-- 已完成 - 次要指标，淡绿色背景 -->
+          <div class="stat-card stat-card-completed clickable" @click="setFilter('completed')" :class="{ active: currentFilter === 'completed' }">
             <span class="stat-label">已完成</span>
             <span class="stat-value success">{{ completedCount }}</span>
           </div>
 
-          <!-- 待办 -->
-          <div class="stat-card clickable" @click="setFilter('pending')" :class="{ active: currentFilter === 'pending' }">
+          <!-- 待办 - 次要指标，淡蓝色背景 -->
+          <div class="stat-card stat-card-pending clickable" @click="setFilter('pending')" :class="{ active: currentFilter === 'pending' }">
             <span class="stat-label">待办</span>
             <span class="stat-value">{{ pendingCount }}</span>
           </div>
 
-          <!-- 已逾期 -->
-          <div class="stat-card clickable" @click="setFilter('overdue')" :class="{ active: currentFilter === 'overdue' }">
+          <!-- 已逾期 - 核心风险指标，稍宽，淡红色背景 -->
+          <div class="stat-card stat-card-primary stat-card-overdue clickable" @click="setFilter('overdue')" :class="{ active: currentFilter === 'overdue' }">
             <span class="stat-label">已逾期</span>
             <span class="stat-value danger">{{ overdueCount }}</span>
           </div>
@@ -91,6 +94,16 @@
               placeholder="➕ 新建任务：输入任务名称..."
               @keyup.enter="addTask"
             >
+          </div>
+
+          <!-- v1.5.14: 任务描述输入框（智能显示） -->
+          <div v-if="newTaskText.trim()" class="add-form-row-description">
+            <textarea 
+              v-model="newTaskDescription" 
+              class="task-description-input"
+              placeholder="📝 任务描述（可选）..."
+              rows="2"
+            ></textarea>
           </div>
 
           <!-- 第二行：属性配置 -->
@@ -1001,6 +1014,7 @@ const TaskStatus = {
 
 // 响应式数据
 const newTaskText = ref('')
+const newTaskDescription = ref('') // v1.5.14: 任务描述（可选）
 const newTaskType = ref('today')
 const customDateTime = ref('')
 const newTaskCategory = ref('work')
@@ -1487,6 +1501,7 @@ const addTaskAndClose = async () => {
 }
 
 // 方法：添加任务
+// v1.5.14: 添加任务（支持描述）
 const addTask = async () => {
   if (!newTaskText.value.trim()) return
   
@@ -1513,6 +1528,7 @@ const addTask = async () => {
   
   const task = {
     text: newTaskText.value.trim(),
+    description: newTaskDescription.value.trim(), // 保存描述（可选）
     type: newTaskType.value,
     category: newTaskCategory.value,
     priority: newTaskPriority.value,
@@ -1525,6 +1541,7 @@ const addTask = async () => {
   
   // 清空输入
   newTaskText.value = ''
+  newTaskDescription.value = '' // 清空描述
   newTaskType.value = 'today'
   customDateTime.value = ''
   newTaskCategory.value = 'work'
@@ -2310,10 +2327,21 @@ const showNotification = (message, type = 'info') => {
 }
 
 // 刷新方法
+// v1.5.13: 刷新方法 - 重置所有筛选条件
 const handleRefresh = async () => {
   if (isRefreshing.value) return
   
   isRefreshing.value = true
+  
+  // 重置所有筛选条件
+  currentFilter.value = 'all'
+  currentCategoryFilter.value = 'all'
+  currentPriorityFilter.value = 'all'
+  searchKeyword.value = ''
+  startDate.value = null
+  endDate.value = null
+  
+  // 重新加载数据
   await taskStore.setCurrentUser(userStore.currentUser)
   await loadUserInfo()
   taskStore.checkOverdueTasks()
@@ -2515,6 +2543,7 @@ onUnmounted(() => {
 }
 
 /* v1.5.6: Grid统计卡片 - 扁平化，直接浮在背景上 */
+/* v1.5.9: 统计卡片 - 主次分明，色彩语义化 */
 .stats-grid {
   display: flex;
   gap: 0.3rem;
@@ -2522,8 +2551,14 @@ onUnmounted(() => {
   width: 100%;
 }
 
-.stats-grid > .stat-card:not(.add-toggle-card) {
+/* 次要指标：等宽 */
+.stats-grid > .stat-card:not(.add-toggle-card):not(.stat-card-primary) {
   flex: 1;
+}
+
+/* 核心指标：稍宽（1.3倍） */
+.stats-grid > .stat-card-primary {
+  flex: 1.3;
 }
 
 .stat-card {
@@ -2535,11 +2570,29 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 8px;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   height: 44px;
   box-sizing: border-box;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+}
+
+/* 色彩语义化 - 已完成（淡绿色背景） */
+.stat-card-completed {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.04) 100%);
+  border-color: rgba(16, 185, 129, 0.15);
+}
+
+/* 色彩语义化 - 待办（淡蓝色背景） */
+.stat-card-pending {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
+  border-color: rgba(59, 130, 246, 0.15);
+}
+
+/* 色彩语义化 - 已逾期（淡红色背景） */
+.stat-card-overdue {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.04) 100%);
+  border-color: rgba(239, 68, 68, 0.15);
 }
 
 .stat-card.add-toggle-card {
@@ -2552,6 +2605,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: none;
 }
 
 /* 筛选按钮卡片 - 与箭头按钮高度一致 */
@@ -2615,15 +2669,55 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+/* 微交互 - 悬停效果增强 */
 .stat-card.clickable:hover {
   background: white;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+/* 已完成卡片悬停 */
+.stat-card-completed.clickable:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+/* 待办卡片悬停 */
+.stat-card-pending.clickable:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* 已逾期卡片悬停 */
+.stat-card-overdue.clickable:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+/* 激活状态 - 增强视觉反馈 */
 .stat-card.active {
   background: white;
   border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.25);
+  transform: translateY(-1px);
+}
+
+/* 已完成激活状态 */
+.stat-card-completed.active {
+  border-color: #10b981;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
+}
+
+/* 待办激活状态 */
+.stat-card-pending.active {
+  border-color: #3b82f6;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.3);
+}
+
+/* 已逾期激活状态 */
+.stat-card-overdue.active {
+  border-color: #ef4444;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.3);
 }
 
 .stat-card .stat-label {
@@ -3376,11 +3470,26 @@ onUnmounted(() => {
   50% { opacity: 0.7; }
 }
 
+/* v1.5.12: 胶囊化功能组容器 */
+.header-actions-capsule {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  padding: 0.3rem 0.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.header-actions-capsule:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
 .header-actions {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.4rem;
   align-items: center;
-  margin-right: 0.2rem;
 }
 
 .header {
@@ -3400,26 +3509,25 @@ onUnmounted(() => {
 
 /* 统一的圆形图标按钮 */
 .btn-icon-circle {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
   color: white;
   font-size: 1.8rem;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .btn-icon-circle:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.08);
 }
 
 .btn-icon-circle:active {
@@ -3437,14 +3545,20 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* 刷新按钮特殊尺寸 */
+/* v1.5.13: 刷新按钮 - 增强对比度 */
 .btn-refresh-icon {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
+  background: rgba(102, 126, 234, 0.25) !important; /* 紫色半透明，增强对比度 */
+  color: white !important;
+}
+
+.btn-refresh-icon:hover {
+  background: rgba(102, 126, 234, 0.4) !important;
 }
 
 /* 回收站按钮 */
 .btn-trash {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
 }
 
 /* 数字气泡 */
@@ -3468,18 +3582,18 @@ onUnmounted(() => {
 }
 
 .btn-avatar {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.9);
   background: white;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -3492,15 +3606,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-avatar:hover {
-  transform: translateY(-2px) scale(1.05);
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: scale(1.08);
+  border-color: white;
 }
 
 .btn-avatar:active {
@@ -4294,21 +4407,22 @@ onUnmounted(() => {
 }
 
 /* v1.5.6: 筛选弹窗 - 极致空间利用，边距压缩至极限 */
+/* v1.5.13: 筛选弹窗 - 紧凑型布局优化 */
 .filter-modal {
-  max-width: 600px; /* 放宽上限 */
-  width: 98%;      /* 进一步贴合屏幕边缘 */
+  max-width: 600px;
+  width: 98%;
   background: white;
   border-radius: 12px;
   padding: 0 !important;
 }
 
 .filter-body {
-  padding: 1.5rem 0.6rem; /* 左右边距压缩至 0.6rem */
+  padding: 1.2rem 0.6rem; /* 顶部从1.5rem缩减到1.2rem */
 }
 
 .filter-section {
-  margin-bottom: 1.8rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1.1rem; /* 从1.8rem缩减40%到1.1rem */
+  padding-bottom: 0.9rem; /* 从1.5rem缩减40%到0.9rem */
   border-bottom: 1px solid #f0f0f0;
   width: 100%;
 }
@@ -4324,7 +4438,7 @@ onUnmounted(() => {
   font-size: 0.9rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.5rem; /* 从0.8rem缩减到0.5rem */
 }
 
 /* 合并行布局 */
@@ -4361,9 +4475,10 @@ onUnmounted(() => {
   width: 100%;
 }
 
+/* v1.5.13: 日期输入框 - 压缩高度 */
 .date-input-box {
-  flex: 1; /* 强制左右两个输入框平分剩余空间 */
-  padding: 0.8rem 1rem;
+  flex: 1;
+  padding: 0.55rem 1rem; /* 从0.8rem缩减到0.55rem，减少约30% */
   border: 2px solid #d0d0d0;
   border-radius: 10px;
   font-size: 0.9rem;
@@ -4401,10 +4516,11 @@ onUnmounted(() => {
   width: 100%;
 }
 
+/* v1.5.13: 筛选按钮 - 紧凑扁平化 */
 .filter-chip {
   flex: 1;
   min-width: calc(25% - 0.8rem); 
-  padding: 0.3rem 0.5rem; /* 再次微缩垂直内边距 */
+  padding: 0.25rem 0.5rem; /* 垂直padding从0.3rem缩减到0.25rem */
   border: 2px solid #d0d0d0;
   background: #fafafa;
   border-radius: 12px;
@@ -4416,9 +4532,9 @@ onUnmounted(() => {
   flex-direction: column-reverse; /* 数字在上，标签在下 */
   align-items: center;
   justify-content: center;
-  gap: 0.1rem;
+  gap: 0.05rem; /* 从0.1rem缩减到0.05rem，数字和文字更紧凑 */
   box-sizing: border-box;
-  min-height: 52px; /* 极致紧凑高度，让方框精准包裹文字 */
+  min-height: 42px; /* 从52px缩减到42px，减少20% */
 }
 
 /* 针对分类（4个按钮：全部+3个分类）和优先级（4个按钮：全部+3个优先级）的特殊处理 */
@@ -4705,6 +4821,7 @@ onUnmounted(() => {
 }
 
 /* v1.5.6: 两行布局添加表单 - 完全扁平化 */
+/* v1.5.11: 创建任务区优化 - 视觉锚点增强 */
 .add-form-two-row {
   margin-top: 0;
   padding: 0;
@@ -4713,7 +4830,7 @@ onUnmounted(() => {
   border: none;
 }
 
-/* 第一行：主输入区 - 去掉外层卡片，让输入框直接呼吸 */
+/* 第一行：主输入区 - 凹陷质感 */
 .add-form-row-main {
   display: flex;
   gap: 0.5rem;
@@ -4725,6 +4842,7 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
+/* 输入框 - 内阴影凹陷感 */
 .task-input-main {
   flex: 1;
   padding: 0.5rem 1.2rem;
@@ -4733,8 +4851,9 @@ onUnmounted(() => {
   background: white;
   font-size: 0.85rem;
   color: #333;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  /* 内阴影营造凹陷感 */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   line-height: 1.5;
   height: 36px;
   box-sizing: border-box;
@@ -4748,9 +4867,61 @@ onUnmounted(() => {
   outline: none;
   border-color: #667eea;
   background: white;
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15); /* 聚焦时更强的悬浮感 */
+  /* 聚焦时减弱内阴影，增强外阴影 */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* v1.5.14: 任务描述输入框区域 */
+.add-form-row-description {
+  display: flex;
+  margin-bottom: 0.5rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* v1.5.14: 任务描述输入框 - 与任务名称输入框风格一致 */
+.task-description-input {
+  flex: 1;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: white;
+  font-size: 0.85rem;
+  color: #333;
+  transition: all 0.3s ease;
+  /* 内阴影营造凹陷感 */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  line-height: 1.5;
+  min-height: 60px;
+  max-height: 150px;
+  resize: vertical; /* 允许垂直调整大小 */
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.task-description-input::placeholder {
+  color: #bbb;
+}
+
+.task-description-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  /* 聚焦时减弱内阴影，增强外发光 */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 提交按钮 - 严格对齐输入框高度 */
 .btn-submit-main {
   width: 36px;
   height: 36px;
@@ -4760,24 +4931,24 @@ onUnmounted(() => {
   color: white;
   font-size: 1.4rem;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .btn-submit-main:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 .btn-submit-main:active {
   transform: scale(0.95);
 }
 
-/* 第二行：属性配置区 - 优化悬浮感 */
+/* 第二行：属性配置区 - 胶囊扁平化 */
 .add-form-row-attrs {
   display: flex;
   gap: 0.6rem;
@@ -4793,25 +4964,26 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
+/* 属性组 - 胶囊样式，无边框 */
 .attr-group {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0 0.5rem;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  height: 36px;
+  padding: 0 0.8rem;
+  /* 浅灰色背景，无边框 */
+  background: rgba(0, 0, 0, 0.04);
+  border: none;
+  border-radius: 18px; /* 更圆润的胶囊形状 */
+  transition: all 0.3s ease;
+  box-shadow: none;
+  height: 32px; /* 比输入框略矮，体现附属属性 */
   box-sizing: border-box;
 }
 
 .attr-group:hover {
-  background: white;
-  border-color: #667eea;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.12);
+  background: rgba(102, 126, 234, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
 }
 
 .attr-icon {
@@ -4823,7 +4995,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   font-size: 0.85rem;
-  color: #888;
+  color: #666;
   cursor: pointer;
   padding: 0;
   outline: none;
