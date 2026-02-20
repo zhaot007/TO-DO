@@ -37,13 +37,18 @@ if exist "android\capacitor-cordova-android-plugins\build.gradle" (
     powershell -Command "(Get-Content 'android\capacitor-cordova-android-plugins\build.gradle') -replace 'JavaVersion.VERSION_21', 'JavaVersion.VERSION_17' | Set-Content 'android\capacitor-cordova-android-plugins\build.gradle'"
 )
 
-:: 修复 Capacitor 插件的 Java 版本
+:: 修复 Capacitor 核心和所有插件的 Java 版本
+if exist "node_modules\@capacitor\android\capacitor\build.gradle" (
+    powershell -Command "(Get-Content 'node_modules\@capacitor\android\capacitor\build.gradle') -replace 'JavaVersion.VERSION_21', 'JavaVersion.VERSION_17' | Set-Content 'node_modules\@capacitor\android\capacitor\build.gradle'"
+)
+
 if exist "node_modules\@capacitor\local-notifications\android\build.gradle" (
     powershell -Command "(Get-Content 'node_modules\@capacitor\local-notifications\android\build.gradle') -replace 'JavaVersion.VERSION_21', 'JavaVersion.VERSION_17' | Set-Content 'node_modules\@capacitor\local-notifications\android\build.gradle'"
 )
 
 if exist "node_modules\@capacitor\filesystem\android\build.gradle" (
     powershell -Command "(Get-Content 'node_modules\@capacitor\filesystem\android\build.gradle') -replace 'JavaVersion.VERSION_21', 'JavaVersion.VERSION_17' | Set-Content 'node_modules\@capacitor\filesystem\android\build.gradle'"
+    powershell -Command "(Get-Content 'node_modules\@capacitor\filesystem\android\build.gradle') -replace 'jvmToolchain\(21\)', 'jvmToolchain(17)' | Set-Content 'node_modules\@capacitor\filesystem\android\build.gradle'"
 )
 
 if exist "node_modules\@capacitor\preferences\android\build.gradle" (

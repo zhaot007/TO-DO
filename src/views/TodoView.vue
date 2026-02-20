@@ -88,7 +88,7 @@
               type="text" 
               v-model="newTaskText" 
               class="task-input-main"
-              placeholder="输入任务名称..."
+              placeholder="➕ 新建任务：输入任务名称..."
               @keyup.enter="addTask"
             >
           </div>
@@ -549,7 +549,7 @@
 
     <!-- 联系与支持详情弹窗 -->
     <div v-if="showSupport" class="modal-overlay" @click.self="showSupport = false">
-      <div class="modal-content glass-card" style="background: white; max-width: 500px;">
+      <div class="modal-content glass-card" style="background: white; max-width: 550px; padding: 0.8rem;">
         <div class="modal-header">
           <h3>💝 联系与支持</h3>
           <button class="close-btn" @click="showSupport = false">&times;</button>
@@ -584,7 +584,7 @@
 
     <!-- 修改密码弹窗 -->
     <div v-if="showPasswordModal" class="modal-overlay" @click.self="showPasswordModal = false">
-      <div class="modal-content glass-card" style="background: white; max-width: 400px;">
+      <div class="modal-content glass-card" style="background: white; max-width: 450px;">
         <div class="modal-header">
           <h3>🔒 修改密码</h3>
           <button class="close-btn" @click="showPasswordModal = false">&times;</button>
@@ -618,7 +618,7 @@
 
     <!-- 绑定手机号弹窗 -->
     <div v-if="showPhoneModal" class="modal-overlay" @click.self="showPhoneModal = false">
-      <div class="modal-content glass-card" style="background: white; max-width: 400px;">
+      <div class="modal-content glass-card" style="background: white; max-width: 450px;">
         <div class="modal-header">
           <h3>📱 绑定手机号</h3>
           <button class="close-btn" @click="showPhoneModal = false">&times;</button>
@@ -676,7 +676,7 @@
 
     <!-- 番茄统计详情弹窗 -->
     <div v-if="showPomodoroStats" class="modal-overlay" @click.self="showPomodoroStats = false">
-      <div class="modal-content glass-card" style="background: white; max-width: 600px;">
+      <div class="modal-content glass-card" style="background: white; max-width: 650px;">
         <div class="modal-header">
           <h3>🍅 番茄钟统计</h3>
           <button class="close-btn" @click="showPomodoroStats = false">&times;</button>
@@ -879,7 +879,7 @@
 
     <!-- 星期选择模态框 - 每周重复 -->
     <div v-if="showWeeklyModal" class="modal-overlay" @click.self="showWeeklyModal = false">
-      <div class="modal-content glass-card" style="background: white; max-width: 400px; padding: 1.5rem;">
+      <div class="modal-content glass-card" style="background: white; max-width: 450px; padding: 1rem;">
         <div class="modal-header">
           <h3>选择重复日期</h3>
           <button class="close-btn" @click="showWeeklyModal = false">&times;</button>
@@ -900,7 +900,7 @@
 
     <!-- 任务详情编辑模态框 -->
     <div v-if="editingTask" class="modal-overlay" @click.self="editingTask = null">
-      <div class="modal-content glass-card" style="background: white; max-width: 500px;">
+      <div class="modal-content glass-card" style="background: white; max-width: 550px;">
         <div class="modal-header">
           <h3>编辑任务详情</h3>
           <button class="close-btn" @click="editingTask = null">&times;</button>
@@ -4197,7 +4197,7 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
-  padding: 0 1rem;
+  padding: 0;
 }
 
 .qr-item {
@@ -4286,9 +4286,9 @@ onUnmounted(() => {
 }
 
 .modal-content {
-  padding: 2rem;
-  width: 90%;
-  max-width: 600px;
+  padding: 1.2rem;
+  width: 96%;
+  max-width: 650px;
   max-height: 80vh;
   overflow-y: auto;
 }
@@ -4581,9 +4581,9 @@ onUnmounted(() => {
 }
 
 .profile-modal {
-  max-width: 90%;
-  width: 90%;
-  padding: 1.5rem;
+  max-width: 96%;
+  width: 96%;
+  padding: 1rem;
 }
 
 .profile-modal .modal-body {
@@ -5143,7 +5143,7 @@ onUnmounted(() => {
 /* 隐私政策模态框 */
 .privacy-modal {
   background: white;
-  max-width: 700px;
+  max-width: 750px;
   max-height: 80vh;
   overflow-y: auto;
 }

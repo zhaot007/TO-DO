@@ -175,12 +175,24 @@ This is an **offline Android To-Do management application** built with **Vue 3**
 3. **生产环境构建**: `npm run build`
 4. **同步到Android**: `npx cap sync android`
 5. **一键打包APK**: 
+   
+   **Windows:**
    ```bash
+   .\build-apk.bat
+   ```
+   
+   **macOS/Linux:**
+   ```bash
+   chmod +x build-apk.sh  # 首次运行需要
    ./build-apk.sh
    ```
+
 6. **APK位置**: `TODO-App.apk`（项目根目录）
 
-**详细打包流程**: 请查看 [APK打包快速指南](APK_BUILD_QUICK.md) 或 [完整指南](APK_BUILD_GUIDE.md)
+**📚 详细文档**: 
+- [Android APK 构建快速指南](README-ANDROID-BUILD.md) - 快速上手
+- [完整构建指南](docs/android-apk-build-guide.md) - 详细配置和故障排查
+- [脚本参考文档](docs/android-build-scripts-reference.md) - 脚本实现细节
 
 ### ⚙️ 配置要求
 - **Java版本**: 需要 Java 17
@@ -203,10 +215,20 @@ TO-DO/
 │   ├── App.vue                   # 根组件 | Root component
 │   └── main.js                   # 入口文件 | Entry file
 ├── android/                      # Android项目目录 | Android project
+│   ├── local.properties         # SDK配置（需手动创建）| SDK config
+│   ├── gradle.properties        # Gradle配置 | Gradle config
+│   └── app/build.gradle         # 应用构建配置 | App build config
+├── docs/                         # 文档目录 | Documentation
+│   ├── android-apk-build-guide.md          # 完整构建指南
+│   └── android-build-scripts-reference.md  # 脚本参考文档
 ├── scripts/                      # 实用脚本 | Utility scripts
 │   ├── 清理本地数据.js          # 清空任务数据 | Clear local data
 │   └── 统计任务数据.js          # 统计任务信息 | Task statistics
 ├── server/                       # 已废弃的后端代码 | Deprecated backend code
+├── build-apk.bat                 # Windows构建脚本 | Windows build script
+├── build-apk.sh                  # macOS/Linux构建脚本 | macOS/Linux build script
+├── build-apk.ps1                 # PowerShell构建脚本 | PowerShell build script
+├── README-ANDROID-BUILD.md       # Android构建快速指南 | Android build quick guide
 ├── capacitor.config.json         # Capacitor配置 | Capacitor config
 ├── TODO导入模板示例.xlsx        # 官方导入模板 | Official import template
 ├── TODO-App.apk                  # Android安装包 | Android APK

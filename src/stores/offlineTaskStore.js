@@ -113,7 +113,7 @@ export const useOfflineTaskStore = defineStore('offlineTask', {
       let filtered = [...this.tasks]
 
       if (statusFilter === 'pending') {
-        filtered = filtered.filter(t => t.status !== 'completed')
+        filtered = filtered.filter(t => t.status === 'pending')
       } else if (statusFilter === 'completed') {
         filtered = filtered.filter(t => t.status === 'completed')
       } else if (statusFilter === 'overdue') {
