@@ -4217,9 +4217,10 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* v1.5.6: 筛选弹窗 - 最大化横向空间利用 */
+/* v1.5.6: 筛选弹窗 - 增加宽度，最大化空间利用 */
 .filter-modal {
-  max-width: 520px;
+  max-width: 560px;
+  width: 95%;
   background: white;
   border-radius: 12px;
 }
@@ -4287,15 +4288,16 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
-/* 分类/优先级按钮 - 固定3列，撑满宽度 */
+/* 分类/优先级按钮 - 强制撑满整行 */
 .filter-buttons {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.6rem;
+  width: 100%;
 }
 
 .filter-chip {
-  padding: 0.8rem 1.2rem;
+  padding: 0.8rem 0.5rem;
   border: 2px solid #d0d0d0;
   background: #fafafa;
   border-radius: 10px;
@@ -4308,6 +4310,8 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.3rem;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .filter-chip .chip-label {
