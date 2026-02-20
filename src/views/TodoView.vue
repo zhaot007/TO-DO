@@ -4219,22 +4219,24 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* v1.5.6: 筛选弹窗 - 增加宽度，最大化空间利用 */
+/* v1.5.6: 筛选弹窗 - 增加宽度，彻底释放空间，消除巨大Padding */
 .filter-modal {
   max-width: 560px;
   width: 95%;
   background: white;
   border-radius: 12px;
+  padding: 0 !important; /* 强制覆盖 .modal-content 的默认 2rem padding */
 }
 
 .filter-body {
-  padding: 1.2rem 1rem;
+  padding: 1.5rem 1.2rem; /* 增加上下，减少左右，实现横向对齐 */
 }
 
 .filter-section {
   margin-bottom: 1.8rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #f0f0f0;
+  width: 100%; /* 确保百分百撑满 */
 }
 
 .filter-section:last-child {
@@ -4486,9 +4488,9 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   border-bottom: 1px solid #eee;
-  padding-bottom: 0.8rem;
+  padding: 1.2rem; /* 增加内边距并与 body 保持一致 */
 }
 
 .close-btn {
