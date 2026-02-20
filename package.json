@@ -33,7 +33,8 @@
           ]
         }
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
