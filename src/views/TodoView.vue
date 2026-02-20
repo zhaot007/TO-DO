@@ -9,8 +9,8 @@
         </div>
         <div class="header-actions">
           <!-- 刷新按钮 -->
-          <button class="btn-icon-circle btn-refresh-icon" @click="handleRefresh" :class="{ spinning: isRefreshing }" title="刷新">
-            ⟳
+          <button class="btn-icon-circle btn-refresh-icon" @click="handleRefresh" title="刷新">
+            <span :class="{ spinning: isRefreshing }">⟳</span>
           </button>
           <!-- 回收站按钮（带数字气泡） -->
           <button class="btn-icon-circle btn-trash" @click="showTrash = true" title="回收站">
@@ -3353,7 +3353,9 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
-.btn-icon-circle.spinning {
+/* 只让图标自转，不让按钮转 */
+.btn-icon-circle .spinning {
+  display: inline-block;
   animation: spin-only 0.8s linear infinite;
 }
 
@@ -4288,15 +4290,17 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
-/* 分类/优先级按钮 - 强制撑满整行 */
+/* 分类/优先级按钮 - 彻底实现横向自适应平铺 */
 .filter-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
   width: 100%;
 }
 
 .filter-chip {
+  flex: 1;
+  min-width: calc(25% - 0.8rem); /* 默认尝试4列分布 */
   padding: 0.8rem 0.5rem;
   border: 2px solid #d0d0d0;
   background: #fafafa;
@@ -4309,9 +4313,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  width: 100%;
-  min-width: 0;
   box-sizing: border-box;
+}
+
+/* 针对分类（4个按钮：全部+3个分类）和优先级（4个按钮：全部+3个优先级）的特殊处理 */
+/* 当容器宽度不足以容纳4个 120px 的按钮时，会自动换行为 2+2 分布，且依然撑满 */
+@media (max-width: 480px) {
+  .filter-chip {
+    min-width: calc(50% - 0.8rem);
+  }
 }
 
 .filter-chip .chip-label {
