@@ -1,7 +1,7 @@
 {
   "name": "todo-app",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.5.7",
   "description": "跨平台离线待办事项管理应用 - 支持Android/Windows/iOS",
   "author": "开发团队",
   "license": "MIT",
