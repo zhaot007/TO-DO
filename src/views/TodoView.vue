@@ -4298,14 +4298,14 @@ onUnmounted(() => {
 .filter-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  gap: 0.8rem; /* 恢复标准间距，确保紧凑 */
   width: 100%;
 }
 
 .filter-chip {
   flex: 1;
-  min-width: calc(25% - 0.8rem); /* 默认尝试4列分布 */
-  padding: 1.2rem 0.5rem; /* 适度增加高度 */
+  min-width: calc(25% - 0.8rem); 
+  padding: 0.3rem 0.5rem; /* 再次微缩垂直内边距 */
   border: 2px solid #d0d0d0;
   background: #fafafa;
   border-radius: 12px;
@@ -4317,9 +4317,9 @@ onUnmounted(() => {
   flex-direction: column-reverse; /* 数字在上，标签在下 */
   align-items: center;
   justify-content: center;
-  gap: 0.5rem; /* 增加数字与文字的垂直间距 */
+  gap: 0.1rem;
   box-sizing: border-box;
-  min-height: 85px; /* 进一步优化高度 */
+  min-height: 52px; /* 极致紧凑高度，让方框精准包裹文字 */
 }
 
 /* 针对分类（4个按钮：全部+3个分类）和优先级（4个按钮：全部+3个优先级）的特殊处理 */
@@ -4331,17 +4331,17 @@ onUnmounted(() => {
 }
 
 .filter-chip .chip-label {
-  font-weight: 600; /* 加强标签字重 */
+  font-weight: 600;
   color: #888;
-  font-size: 0.75rem; /* 适度减小标签字号 */
-  letter-spacing: 0.5px;
+  font-size: 0.8rem; /* 适度调大标签字号 */
+  letter-spacing: 0.3px;
 }
 
 .filter-chip .chip-count {
   font-weight: 800;
-  font-size: 1.25rem; /* 缩小数字字号，避免压迫感 */
+  font-size: 1.25rem; /* 维持清晰的数字大小 */
   color: #333;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .filter-chip:hover {
