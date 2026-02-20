@@ -78,55 +78,80 @@
           </button>
         </div>
 
-        <!-- 添加任务表单 -->
-        <div v-if="showAddForm" class="add-form-inline">
-          <input 
-            type="text" 
-            v-model="newTaskText" 
-            class="input-inline"
-            placeholder="任务名称"
-            @keyup.enter="addTask"
-          >
-          <select v-model="newTaskType" class="select-inline" @change="handleTaskTypeChange">
-            <option value="today">今天</option>
-            <option value="tomorrow">明天</option>
-            <option value="this_week">本周内</option>
-            <option value="custom_date">指定日期</option>
-            <option value="daily">每天重复</option>
-            <option value="weekday">工作日重复</option>
-            <option value="weekly">每周重复</option>
-          </select>
-          <div 
-            v-if="newTaskType === 'custom_date'" 
-            class="date-picker-inline"
-            :class="{ 'placeholder': !customDateTime }"
-            @click="showCustomDateTimePicker"
-          >
-            {{ customDateTime ? formatDisplayDateTime(customDateTime) : '选择日期时间' }}
+        <!-- 添加任务表单 - 两行布局 -->
+        <div v-if="showAddForm" class="add-form-two-row">
+          <!-- 第一行：任务名称 + 提交按钮 -->
+          <div class="add-form-row-main">
+            <input 
+              type="text" 
+              v-model="newTaskText" 
+              class="task-input-main"
+              placeholder="输入任务名称..."
+              @keyup.enter="addTask"
+            >
+            <button class="btn-submit-main" @click="addTask" title="添加任务">✓</button>
           </div>
-          <input ref="hiddenCustomDateTime" type="datetime-local" style="display:none" :min="getTodayDateTime()" @change="handleCustomDateTimeChange">
-          <select v-model="newTaskCategory" class="select-inline">
-            <option value="work">工作</option>
-            <option value="study">学习</option>
-            <option value="life">生活</option>
-          </select>
-          <select v-model="newTaskPriority" class="select-inline">
-            <option value="high">高</option>
-            <option value="medium">中</option>
-            <option value="low">低</option>
-          </select>
-          <button class="btn-inline btn-add" @click="addTask">✓</button>
-          <button class="btn-inline btn-cancel" @click="showAddForm = false">×</button>
-        </div>
-        
-        <div v-if="showAddForm && newTaskType === 'weekly'" class="weekday-select-inline">
-          <label 
-            v-for="(day, index) in weekdays" 
-            :key="index"
-            class="weekday-checkbox-item"
-          >
-            <input type="checkbox" :value="index" v-model="selectedWeekdays"> {{ day }}
-          </label>
+
+          <!-- 第二行：属性配置 -->
+          <div class="add-form-row-attrs">
+            <!-- 日期类型 -->
+            <div class="attr-group">
+              <span class="attr-icon">📅</span>
+              <select v-model="newTaskType" class="attr-select" @change="handleTaskTypeChange">
+                <option value="today">今天</option>
+                <option value="tomorrow">明天</option>
+                <option value="this_week">本周内</option>
+                <option value="custom_date">指定日期</option>
+                <option value="daily">每天重复</option>
+                <option value="weekday">工作日重复</option>
+                <option value="weekly">每周重复</option>
+              </select>
+            </div>
+
+            <!-- 自定义日期时间 -->
+            <div 
+              v-if="newTaskType === 'custom_date'" 
+              class="attr-group"
+              @click="showCustomDateTimePicker"
+            >
+              <span class="attr-text">{{ customDateTime ? formatDisplayDateTime(customDateTime) : '选择时间' }}</span>
+            </div>
+            <input ref="hiddenCustomDateTime" type="datetime-local" style="display:none" :min="getTodayDateTime()" @change="handleCustomDateTimeChange">
+
+            <!-- 分类 -->
+            <div class="attr-group">
+              <span class="attr-icon">🏷️</span>
+              <select v-model="newTaskCategory" class="attr-select">
+                <option value="work">工作</option>
+                <option value="study">学习</option>
+                <option value="life">生活</option>
+              </select>
+            </div>
+
+            <!-- 优先级 -->
+            <div class="attr-group">
+              <span class="attr-icon">⚡</span>
+              <select v-model="newTaskPriority" class="attr-select">
+                <option value="high">高</option>
+                <option value="medium">中</option>
+                <option value="low">低</option>
+              </select>
+            </div>
+
+            <!-- 取消按钮 -->
+            <button class="btn-cancel-attr" @click="showAddForm = false" title="取消">✕</button>
+          </div>
+
+          <!-- 周期选择（每周重复） -->
+          <div v-if="newTaskType === 'weekly'" class="weekday-select-row">
+            <label 
+              v-for="(day, index) in weekdays" 
+              :key="index"
+              class="weekday-label"
+            >
+              <input type="checkbox" :value="index" v-model="selectedWeekdays"> {{ day }}
+            </label>
+          </div>
         </div>
       </section>
 
@@ -2487,12 +2512,12 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
-/* v1.5.2: Grid统计卡片布局 - 紧凑版 */
+/* v1.5.2: Grid统计卡片布局 - 超紧凑版 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 0.4rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 
 .stat-card {
@@ -2500,12 +2525,12 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0.4rem 0.3rem;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 0.35rem 0.25rem;
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   transition: all 0.3s;
-  min-height: 48px;
+  min-height: 42px;
 }
 
 .stat-card.clickable {
@@ -2525,24 +2550,24 @@ onUnmounted(() => {
 }
 
 .stat-card .stat-label {
-  font-size: 0.7rem;
-  color: #666;
-  margin-bottom: 0.2rem;
-  font-weight: 500;
+  font-size: 0.65rem;
+  color: #555;
+  margin-bottom: 0.15rem;
+  font-weight: 600;
 }
 
 .stat-card .stat-value {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #333;
+  color: #222;
 }
 
 .stat-card .stat-value.success {
-  color: #43e97b;
+  color: #10b981;
 }
 
 .stat-card .stat-value.danger {
-  color: #f5576c;
+  color: #ef4444;
 }
 
 /* 第二行：操作栏 - 紧凑版 */
@@ -2550,7 +2575,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 
 .search-container {
@@ -2562,10 +2587,10 @@ onUnmounted(() => {
 
 .search-input-main {
   width: 100%;
-  padding: 0.5rem 2.5rem 0.5rem 0.8rem;
+  padding: 0.45rem 2.5rem 0.45rem 0.8rem;
   border: 2px solid rgba(255, 255, 255, 0.5);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   font-size: 0.85rem;
   color: #333;
   transition: all 0.3s;
@@ -2605,17 +2630,17 @@ onUnmounted(() => {
 }
 
 .action-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.9rem;
   border: none;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
 }
 
 .filter-btn-main {
@@ -4505,6 +4530,171 @@ onUnmounted(() => {
   background-color: #dee2e6;
 }
 
+/* 两行布局添加表单 */
+.add-form-two-row {
+  margin-top: 0.6rem;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 第一行：主输入区 */
+.add-form-row-main {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.task-input-main {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: 2px solid #d0d0d0;
+  border-radius: 10px;
+  background: white;
+  font-size: 0.9rem;
+  color: #333;
+  transition: all 0.3s;
+}
+
+.task-input-main::placeholder {
+  color: #999;
+}
+
+.task-input-main:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-submit-main {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-submit-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+.btn-submit-main:active {
+  transform: scale(0.95);
+}
+
+/* 第二行：属性配置区 */
+.add-form-row-attrs {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.attr-group {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.attr-group:hover {
+  background: white;
+  border-color: #667eea;
+}
+
+.attr-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.attr-select {
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  font-weight: 500;
+}
+
+.attr-text {
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-cancel-attr {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #f5f5f5;
+  color: #999;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.btn-cancel-attr:hover {
+  background: #e0e0e0;
+  color: #666;
+}
+
+/* 周期选择行 */
+.weekday-select-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.weekday-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.weekday-label:hover {
+  background: white;
+  border-color: #667eea;
+}
+
+.weekday-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* 旧版样式保留（兼容） */
 /* 内联添加表单 */
 .add-form-inline {
   display: flex;
