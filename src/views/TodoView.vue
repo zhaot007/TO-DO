@@ -8,10 +8,16 @@
           <h1>{{ taskTitle }}</h1>
         </div>
         <div class="header-actions">
-          <button class="btn-refresh" @click="handleRefresh" :class="{ spinning: isRefreshing }" title="刷新">
+          <!-- 刷新按钮 -->
+          <button class="btn-icon-circle btn-refresh-icon" @click="handleRefresh" :class="{ spinning: isRefreshing }" title="刷新">
             ⟳
           </button>
-          <button class="btn btn-info" @click="showTrash = true">回收站 :{{ taskStore.deletedTasks.length }}</button>
+          <!-- 回收站按钮（带数字气泡） -->
+          <button class="btn-icon-circle btn-trash" @click="showTrash = true" title="回收站">
+            🗑️
+            <span v-if="taskStore.deletedTasks.length > 0" class="badge-count">{{ taskStore.deletedTasks.length }}</span>
+          </button>
+          <!-- 个人头像 -->
           <button class="btn-avatar" @click="showProfile = true" title="个人主页">
             <div class="avatar-mini">{{ currentUsername ? currentUsername.charAt(0).toUpperCase() : 'U' }}</div>
           </button>
@@ -3296,8 +3302,9 @@ onUnmounted(() => {
 
 .header-actions {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   align-items: center;
+  margin-right: 0.2rem;
 }
 
 .header {
@@ -3315,37 +3322,71 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.btn-refresh {
-  width: auto;
-  height: auto;
+/* 统一的圆形图标按钮 */
+.btn-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   border: none;
-  background: none;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 3.0rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1.8rem;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.btn-refresh:hover {
-  transform: scale(1.2);
-  color: white;
+.btn-icon-circle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.btn-refresh:active {
-  transform: scale(1.4);
+.btn-icon-circle:active {
+  transform: scale(0.95);
 }
 
-.btn-refresh.spinning {
-  animation: spin 0.8s linear infinite;
+.btn-icon-circle.spinning {
+  animation: spin-only 0.8s linear infinite;
 }
 
-@keyframes spin {
+@keyframes spin-only {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* 刷新按钮特殊尺寸 */
+.btn-refresh-icon {
+  font-size: 3rem;
+}
+
+/* 回收站按钮 */
+.btn-trash {
+  font-size: 1.5rem;
+}
+
+/* 数字气泡 */
+.badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-avatar {
